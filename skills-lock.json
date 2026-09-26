@@ -7,6 +7,12 @@
       "skillPath": "skills/taste-skill/SKILL.md",
       "computedHash": "6d838b246d0e35d0b53f4f23f98ba7a1dd561937e64f7d0c7553b0928e376c3e"
     },
+    "report-writing": {
+      "source": "robin-collins/claude_code_skills",
+      "sourceType": "github",
+      "skillPath": "report-writing/SKILL.md",
+      "computedHash": "ae1cf0a942eb1fa11cd08696371352f613cd9f266afb11c675425c9a201e2725"
+    },
     "expo-animation": {
       "source": "expo/skills",
       "sourceType": "github",
