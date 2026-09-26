@@ -1,26 +1,26 @@
 import React from 'react';
 import { Pressable, StyleSheet, TextInput, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { usePokemon } from '../context/PokemonContext';
 import { COLORS, RADIUS } from '../theme/tokens';
 
-export function SearchBar() {
-  const { query, setQuery, search } = usePokemon();
+// SearchBar genérico por props: lo alimenta el context del área activa
+// (Pokemon o Naruto). `color` pinta el botón con el acento del área. Sin fetch interno.
+export function SearchBar({ value, onChange, onSearch, color, placeholder, label }) {
   return (
     <View style={styles.row}>
       <TextInput
         style={styles.input}
-        placeholder="Ej. pikachu, 25, charizard"
-        value={query}
-        onChangeText={setQuery}
+        placeholder={placeholder}
+        value={value}
+        onChangeText={onChange}
         autoCapitalize="none"
         autoCorrect={false}
         placeholderTextColor={COLORS.textMedium}
-        onSubmitEditing={search}
+        onSubmitEditing={onSearch}
         returnKeyType="search"
-        accessibilityLabel="Buscar pokemon por nombre o número"
+        accessibilityLabel={label}
       />
-      <Pressable style={styles.btn} onPress={search} accessibilityRole="button" accessibilityLabel="Buscar">
+      <Pressable style={[styles.btn, { backgroundColor: color || COLORS.primary }]} onPress={onSearch} accessibilityRole="button" accessibilityLabel="Buscar">
         <Ionicons name="search" size={24} color="#fff" />
       </Pressable>
     </View>
@@ -34,7 +34,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20, borderTopLeftRadius: RADIUS.l, borderBottomLeftRadius: RADIUS.l,
   },
   btn: {
-    backgroundColor: COLORS.primary, justifyContent: 'center', alignItems: 'center',
+    justifyContent: 'center', alignItems: 'center',
     paddingHorizontal: 25, borderTopRightRadius: RADIUS.l, borderBottomRightRadius: RADIUS.l, minHeight: 44,
   },
 });

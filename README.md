@@ -57,6 +57,10 @@ EXPO_PUBLIC_API_URL=http://192.168.20.144:3001
 cd backend && npm start
 curl http://localhost:3001/health  # → {"ok":true}
 
+# Terminal 1b — microservicio Naruto (proceso aparte, puerto 3002)
+cd backend-naruto && npm start
+curl "http://localhost:3002/consultaNaruto?query=sasuke"  # → id 1307
+
 # Terminal 2 — app Expo
 ./node_modules/.bin/expo start --clear        # LAN / emulador
 ./node_modules/.bin/expo start --tunnel       # si el teléfono no alcanza tu red (pide @expo/ngrok)
@@ -67,8 +71,11 @@ Luego escanea el QR con Expo Go. `npm run web` también sirve (`expo start --web
 ## Uso
 
 1. Busca por **nombre o número**: `pikachu`, `25`, `025` (normaliza ceros), `150`.
-2. **Galería** (tab 1): arte oficial + sprites Normal/Shiny (= 3 imágenes) + anterior/siguiente.
-3. **Datos** (tab 2): altura, peso, 6 stats con barras, tipos, habilidad y **todos** los movimientos.
+   En Naruto: `sasuke`, `1307`, `naruto`.
+2. **4 tabs abajo**: Galería/Datos Pokémon + N-Galería/N-Datos Naruto.
+3. **Galería Pokémon** (tab 1): arte oficial + sprites Normal/Shiny (= 3 imágenes) + anterior/siguiente.
+4. **Datos Pokémon** (tab 2): altura, peso, 6 stats con barras, tipos, habilidad y **todos** los movimientos.
+5. **N-Galería**: imágenes + nombre + clan/aldea + jutsu insignia + anterior/siguiente (por vecinos del catálogo, los IDs no son secuenciales). **N-Datos**: físico, debut, naturalezas, jutsus, familia.
 
 ## Estructura
 

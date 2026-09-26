@@ -12,6 +12,9 @@ Read the exact versioned docs at https://docs.expo.dev/versions/v54.0.0/ before 
 - **JS con `StyleSheet.create`** (no migrar a TS sin pedirlo).
 - **Front nunca llama a `pokeapi.co`**: todo pasa por el micro
   `GET /consultaPokemon?query=` (`backend/server.js`, `EXPO_PUBLIC_API_URL`).
+- **Naruto espejo**: `GET /consultaNaruto?query=` (`backend-naruto/server.js`,
+  puerto 3002, `EXPO_PUBLIC_NARUTO_API_URL`, fuente Dattebayo). Anterior/siguiente
+  por vecinos del catálogo (`prevId`/`nextId`, IDs no secuenciales).
 - **Estado global**: `context/PokemonContext.js` (`usePokemon`). Galería = 3 imágenes,
   Datos = resto. 4 estados: loading / error / empty / content.
 - **Tokens**: `theme/tokens.js` (rojo fandom `#D64545`). Sin NativeWind salvo pedido explícito.

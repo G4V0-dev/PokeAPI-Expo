@@ -1,46 +1,68 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
-// Entrada de la app: Provider global + Home con los 4 estados
-// (loading / error / empty / content) y tabs Galería | Datos.
+// Entrada de la app: Providers globales + Home con área (pokemon|naruto),
+// 4 estados (loading / error / empty / content) y 4 tabs.
 import { PokemonProvider, usePokemon } from './context/PokemonContext';
-import { COLORS, RADIUS } from './theme/tokens';
+import { NarutoProvider, useNaruto } from './context/NarutoContext';
+import { COLORS, NARUTO_COLORS, RADIUS } from './theme/tokens';
 import { SearchBar } from './components/SearchBar';
 import { BottomTabs } from './components/BottomTabs';
 import { GalleryScreen } from './components/GalleryScreen';
 import { DataScreen } from './components/DataScreen';
+import { NarutoGalleryScreen } from './components/NarutoGalleryScreen';
+import { NarutoDataScreen } from './components/NarutoDataScreen';
 import { EmptyState } from './components/EmptyState';
 
 function Home() {
-  const { loading, error, isEmpty, activeTab, search, pokemonData } = usePokemon();
+  const [area, setArea] = useState('pokemon'); // pokemon | naruto
+  const poke = usePokemon();
+  const naru = useNaruto();
+  const ctx = area === 'pokemon' ? poke : naru;
+  const isNaruto = area === 'naruto';
+  const accent = isNaruto ? NARUTO_COLORS.primary : COLORS.primary;
+  const title = isNaruto ? 'Ninja Explorer' : 'Poké Explorer';
 
   return (
     <View style={styles.container}>
-      <View style={styles.header}>
-        <MaterialCommunityIcons name="pokeball" size={28} color="#fff" />
-        <Text style={styles.headerTitle}>Poké Explorer</Text>
+      <View style={[styles.header, { backgroundColor: accent }]}>
+        <MaterialCommunityIcons name={isNaruto ? 'ninja' : 'pokeball'} size={28} color="#fff" />
+        <Text style={styles.headerTitle}>{title}</Text>
       </View>
 
       <ScrollView contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}>
-        <SearchBar />
+        <SearchBar
+          value={ctx.query}
+          onChange={ctx.setQuery}
+          onSearch={ctx.search}
+          color={accent}
+          placeholder={isNaruto ? 'Ej. sasuke, 1307, sakura' : 'Ej. pikachu, 25, charizard'}
+          label={isNaruto ? 'Buscar personaje por nombre o número' : 'Buscar pokemon por nombre o número'}
+        />
 
-        {loading && <ActivityIndicator size="large" color={COLORS.primary} style={styles.loader} />}
+        {ctx.loading && <ActivityIndicator size="large" color={accent} style={styles.loader} />}
 
-        {!loading && error && (
+        {!ctx.loading && ctx.error && (
           <View style={styles.errorBox}>
-            <Text style={styles.errorText}>{error}</Text>
-            <Pressable style={styles.retry} onPress={search} accessibilityRole="button" accessibilityLabel="Reintentar">
+            <Text style={styles.errorText}>{ctx.error}</Text>
+            <Pressable style={[styles.retry, { backgroundColor: accent }]} onPress={ctx.search} accessibilityRole="button" accessibilityLabel="Reintentar">
               <Text style={styles.retryText}>Reintentar</Text>
             </Pressable>
           </View>
         )}
 
-        {!loading && !error && isEmpty && <EmptyState />}
+        {!ctx.loading && !ctx.error && ctx.isEmpty && (
+          <EmptyState message={isNaruto ? 'Busca un personaje para ver galería y datos' : undefined} />
+        )}
 
-        {!loading && !error && pokemonData && (activeTab === 'galeria' ? <GalleryScreen /> : <DataScreen />)}
+        {!ctx.loading && !ctx.error && !ctx.isEmpty && (
+          isNaruto
+            ? (naru.activeTab === 'galeria' ? <NarutoGalleryScreen /> : <NarutoDataScreen />)
+            : (poke.activeTab === 'galeria' ? <GalleryScreen /> : <DataScreen />)
+        )}
       </ScrollView>
 
-      <BottomTabs />
+      <BottomTabs area={area} setArea={setArea} />
     </View>
   );
 }
@@ -48,7 +70,9 @@ function Home() {
 export default function App() {
   return (
     <PokemonProvider>
-      <Home />
+      <NarutoProvider>
+        <Home />
+      </NarutoProvider>
     </PokemonProvider>
   );
 }

@@ -22,3 +22,10 @@ export const COLORS = {
 
 export const RADIUS = { s: 8, m: 12, l: 16, xl: 24 };
 export const SPACING = { xs: 4, s: 8, m: 12, l: 16, xl: 20, xxl: 24 };
+
+// Área Naruto: mismo sistema, acento naranja ninja en vez del rojo fandom.
+export const NARUTO_COLORS = {
+  ...COLORS,
+  primary: '#DD6B20', // Naranja ninja (header, CTAs, tabs de Naruto)
+  primaryDark: '#9C4221',
+};
