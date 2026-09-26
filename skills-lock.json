@@ -13,6 +13,12 @@
       "skillPath": "report-writing/SKILL.md",
       "computedHash": "ae1cf0a942eb1fa11cd08696371352f613cd9f266afb11c675425c9a201e2725"
     },
+    "docx": {
+      "source": "sarukas/claude-skill-docx",
+      "sourceType": "github",
+      "skillPath": "SKILL.md",
+      "computedHash": "9532bf6c4fda3fabc388fd00543de62882313ca597e51c9d1509cba9230adfa2"
+    },
     "expo-animation": {
       "source": "expo/skills",
       "sourceType": "github",

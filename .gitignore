@@ -47,3 +47,6 @@ yarn-error.*
 
 # informe local (no se publica)
 FUNCIONAMIENTO-MOBILE.md
+
+# documentos Word locales
+*.docx
