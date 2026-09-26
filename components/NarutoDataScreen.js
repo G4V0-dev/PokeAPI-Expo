@@ -3,17 +3,36 @@ import { StyleSheet, Text, View } from 'react-native';
 import { COLORS, RADIUS } from '../theme/tokens';
 import { useNaruto } from '../context/NarutoContext';
 
+// Dattebayo devuelve sex/age/height/weight como string O como objeto por saga
+// ({'Part I': '12-13', 'Part II': '16-17'}). React no renderiza objetos como hijo:
+// hay que aplanarlos a string legible antes de pintarlos.
+function formatDetail(v) {
+  if (v == null) return null;
+  if (typeof v === 'string' || typeof v === 'number' || typeof v === 'boolean') return String(v);
+  if (Array.isArray(v)) return v.map(formatDetail).filter(Boolean).join(', ') || null;
+  if (typeof v === 'object') {
+    return Object.entries(v)
+      .map(([k, val]) => `${k}: ${formatDetail(val)}`)
+      .filter((s) => s && !s.endsWith(': null') && !s.endsWith(': '))
+      .join(' · ') || null;
+  }
+  return String(v);
+}
+
 // Vista Datos Naruto: ficha completa (físico, debut, naturalezas, jutsus, familia).
 // Sin imágenes hero.
 export function NarutoDataScreen() {
   const { characterData } = useNaruto();
   if (!characterData) return null;
-  const kv = (k, v) => (!!v && (
-    <View key={k} style={styles.physiqueItem}>
-      <Text style={styles.physiqueValue}>{v}</Text>
-      <Text style={styles.physiqueLabel}>{k}</Text>
-    </View>
-  ));
+  const kv = (k, v) => {
+    const text = formatDetail(v);
+    return (!!text && (
+      <View key={k} style={styles.physiqueItem}>
+        <Text style={styles.physiqueValue}>{text}</Text>
+        <Text style={styles.physiqueLabel}>{k}</Text>
+      </View>
+    ));
+  };
   return (
     <View style={styles.card}>
       <View style={styles.physique}>
@@ -31,25 +50,31 @@ export function NarutoDataScreen() {
         <>
           <Text style={styles.section}>NATURALEZAS DE CHAKRA</Text>
           <View style={styles.chips}>
-            {characterData.natureTypes.map((n) => (
-              <View key={n} style={styles.chip}><Text style={styles.chipText}>{n}</Text></View>
-            ))}
+            {characterData.natureTypes.map((n, i) => {
+              const label = formatDetail(n) || `Tipo ${i + 1}`;
+              return (
+                <View key={`${label}-${i}`} style={styles.chip}><Text style={styles.chipText}>{label}</Text></View>
+              );
+            })}
           </View>
         </>
       )}
 
       <Text style={styles.section}>JUTSUS ({characterData.jutsus.length})</Text>
       <View style={styles.chips}>
-        {characterData.jutsus.map((j) => (
-          <View key={j} style={styles.move}><Text style={styles.moveText}>{j}</Text></View>
-        ))}
+        {characterData.jutsus.map((j, i) => {
+          const label = formatDetail(j) || `Jutsu ${i + 1}`;
+          return (
+            <View key={`${label}-${i}`} style={styles.move}><Text style={styles.moveText}>{label}</Text></View>
+          );
+        })}
       </View>
 
       {!!Object.keys(characterData.family).length && (
         <>
           <Text style={styles.section}>FAMILIA</Text>
           {Object.entries(characterData.family).map(([rel, name]) => (
-            <Text key={rel} style={styles.line}>{rel}: {String(name)}</Text>
+            <Text key={rel} style={styles.line}>{rel}: {formatDetail(name)}</Text>
           ))}
         </>
       )}
