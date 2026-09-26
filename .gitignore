@@ -44,3 +44,6 @@ yarn-error.*
 .agents/
 .claude/
 .cache/
+
+# informe local (no se publica)
+FUNCIONAMIENTO-MOBILE.md
