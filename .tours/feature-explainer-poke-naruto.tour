@@ -1,0 +1,66 @@
+{
+  "$schema": "https://aka.ms/codetour-schema",
+  "title": "PokeAPI + Naruto Explorer — cómo funciona",
+  "description": "Recorrido feature-explainer del flujo completo: búsqueda Pokémon/Naruto, 4 tabs, micros :3001/:3002 y fix LAN en Android físico.",
+  "ref": "feature/naruto-explorer",
+  "steps": [
+    {
+      "file": "App.js",
+      "line": 17,
+      "title": "1. Home: 2 áreas, 4 estados, 4 tabs",
+      "description": "Situation: entrada visual en Home(). Mechanism: useState area pokemon|naruto + ctx loading/error/empty/content. Implication: todo lo que ves en capturas sale de aquí. Gotcha: el header y SearchBar cambian de color/texto según área."
+    },
+    {
+      "file": "context/PokemonContext.js",
+      "line": 20,
+      "title": "2. Estado global Pokémon (fetchOne)",
+      "description": "Situation: provider con query/loading/error/isEmpty/activeTab. Mechanism: fetchOne llama a getPokemon con AbortController y guarda data+currentId. Implication: Galería y Datos leen el mismo dato. Gotcha: next/prev es +1/-1 secuencial (PokeAPI sí es secuencial)."
+    },
+    {
+      "file": "services/pokemonService.js",
+      "line": 16,
+      "title": "3. Front nunca toca pokeapi.co",
+      "description": "Situation: getPokemon(query). Mechanism: fetch a PRIMARY_URL (EXPO_PUBLIC_API_URL) + fallback a localhost, normaliza '025'->'25'. Implication: si el micro está caído lanza ApiError con ambas URLs (ver capturas de micro caído). Gotcha: en Android físico localhost = el teléfono, por eso se fijó a 192.168.20.51."
+    },
+    {
+      "file": "backend/server.js",
+      "line": 48,
+      "title": "4. Micro Pokémon :3001 cura la respuesta",
+      "description": "Situation: handler /consultaPokemon?query=. Mechanism: consume pokeapi.co, toCurated devuelve id/name/heightM/weightKg/sprites/types/abilities/stats/moves. Implication: el front recibe JSON limpio. Gotcha: 400 sin query, 404 si no existe."
+    },
+    {
+      "file": "components/GalleryScreen.js",
+      "line": 8,
+      "title": "5. Tab Galería Pokémon — 3 imágenes",
+      "description": "Situation: vista principal con hero official + normal + shiny. Mechanism: lee pokemonData.sprites + prev/next. Implication: corresponde a 'Tab Galeria Pokemon.jpeg'. Gotcha: aquí no hay stats, solo imágenes + like + navegación."
+    },
+    {
+      "file": "components/DataScreen.js",
+      "line": 8,
+      "title": "6. Tab Datos Pokémon — físico + stats + moves",
+      "description": "Situation: vista secundaria sin hero. Mechanism: altura/peso + StatBar x6 + tipos + moves completos. Implication: corresponde a 'Tab Datos Pokemon.jpeg'. Gotcha: total = suma de 6 stats."
+    },
+    {
+      "file": "context/NarutoContext.js",
+      "line": 20,
+      "title": "7. Espejo Naruto (IDs no secuenciales)",
+      "description": "Situation: NarutoProvider espejo del de Pokémon. Mechanism: fetchOne vía getNarutoCharacter al :3002. Implication: N-Galería/N-Datos funcionan igual pero prev/next viene de prevId/nextId del catálogo (huecos de hasta 70). Gotcha: no hacer +1/-1 aquí, usar vecinos."
+    },
+    {
+      "file": "backend-naruto/server.js",
+      "line": 129,
+      "title": "8. Micro Naruto :3002 + catálogo",
+      "description": "Situation: rutas /consultaNaruto y /health. Mechanism: consume dattebayo-api, cachea catálogo de IDs para neighbors(). Implication: aunque falle el catálogo igual responde el personaje (prev/next null). Gotcha: el tier gratis de Dattebayo se pagina de 4 en 4."
+    },
+    {
+      "file": "components/BottomTabs.js",
+      "line": 10,
+      "title": "9. 4 tabs abajo + fix LAN Android",
+      "description": "Situation: go(area,tab) fija área + tab interna. Mechanism: Galería/Datos Pokémon + N-Galería/N-Datos. Implication: las 4 capturas de tabs salen de aquí. Gotcha: tras cambiar .env* hay que reiniciar Expo con --clear (env incrustado) + firewall 3001/3002/8081 y misma WiFi; en teléfono verificar /health da {ok:true}."
+    },
+    {
+      "title": "Next Steps",
+      "description": "Ya puedes trazar buscar→micro→curaduría→tab end-to-end en ambas áreas. Ver docs/REPORTE-FUNCIONAMIENTO.md con las 6 capturas como evidencia."
+    }
+  ]
+}
