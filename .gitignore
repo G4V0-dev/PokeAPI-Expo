@@ -45,6 +45,10 @@ yarn-error.*
 .claude/
 .cache/
 
+# python
+__pycache__/
+*.pyc
+
 # secrets locales de micros cloud (nunca commitear)
 backend-poke-cloud/.env
 backend-anime-cloud/.env
