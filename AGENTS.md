@@ -10,11 +10,15 @@ Read the exact versioned docs at https://docs.expo.dev/versions/v54.0.0/ before 
   `./node_modules/.bin/expo` (el global de pnpm resuelve CLI 57 incompatible).
 - **Sin Expo Router**: app existente con `index.js` → `App.js`. No crear `app/`.
 - **JS con `StyleSheet.create`** (no migrar a TS sin pedirlo).
-- **Front nunca llama a `pokeapi.co`**: todo pasa por el micro
-  `GET /consultaPokemon?query=` (`backend/server.js`, `EXPO_PUBLIC_API_URL`).
-- **Naruto espejo**: `GET /consultaNaruto?query=` (`backend-naruto/server.js`,
-  puerto 3002, `EXPO_PUBLIC_NARUTO_API_URL`, fuente Dattebayo). Anterior/siguiente
-  por vecinos del catálogo (`prevId`/`nextId`, IDs no secuenciales).
+- **Front nunca llama a APIs públicas**: todo pasa por los micros cloud en Render
+  (sin fallback local). Pokémon → `GET /pokemons/:query` (`backend-poke-cloud/`,
+  Supabase, Swagger `/api-docs`, `EXPO_PUBLIC_API_URL`). Anime →
+  `GET /characters/:query` (`backend-anime-cloud/`, DynamoDB `us-east-2`, Swagger
+  `/docs`, `EXPO_PUBLIC_NARUTO_API_URL`, alias `pain`→Nagato).
+- **Solo 10 por área**: fuera de ellos la nube da `404`. Anterior/siguiente Pokémon
+  por lista de la nube (`getPokemonIds`); Naruto por `prevId`/`nextId` del payload.
+- **Micros locales legacy** (`backend/` :3001, `backend-naruto/` :3002): solo respaldo
+  de desarrollo, el front ya no los usa.
 - **Estado global**: `context/PokemonContext.js` (`usePokemon`). Galería = 3 imágenes,
   Datos = resto. 4 estados: loading / error / empty / content.
 - **Tokens**: `theme/tokens.js` (rojo fandom `#D64545`). Sin NativeWind salvo pedido explícito.

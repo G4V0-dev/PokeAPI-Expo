@@ -1,81 +1,97 @@
-# PokeAPI-Expo · Poké Explorer
+# PokeAPI-Expo · Poké + Ninja Explorer (cloud)
 
-App móvil Expo (SDK 54) + microservicio Node propio. El front **nunca** llama a la
-PokeAPI pública: pide al microservicio qué Pokémon buscar (`nombre o ID`) y este
-consume `pokeapi.co`, cura la respuesta y devuelve JSON limpio.
+App móvil Expo (SDK 54) + **dos microservicios públicos en Render con Swagger**.
+El front **nunca** llama a APIs públicas: consume JSON curado de la nube.
 
 ```
-┌────────┐   GET /consultaPokemon?query=pikachu   ┌──────────┐   GET /pokemon/:q   ┌──────────┐
-│  Front │  ───────────────────────────────────▶  │  Node    │  ────────────────▶  │ pokeapi  │
-│ (Expo) │                                        │ /consulta│                     │  .co     │
-│        │  ◀───────────────────────────────────  │ Pokemon  │  ◀────────────────  │ (nube)   │
-└────────┘            JSON curado                 └──────────┘      JSON crudo      └──────────┘
+┌────────┐  GET /pokemons/pikachu   ┌──────────────┐  SQL (10)  ┌───────────┐
+│  Front │ ───────────────────────▶ │ Node :Render │ ─────────▶ │ Supabase  │
+│ (Expo) │ ◀─────────────────────── │ + Swagger    │ ◀───────── │ Postgres  │
+│        │       JSON curado        └──────────────┘  curado    └───────────┘
+│        │  GET /characters/sasuke  ┌──────────────┐ Scan (10) ┌───────────┐
+│        │ ───────────────────────▶ │ Python:Render│ ─────────▶ │ DynamoDB  │
+│        │ ◀─────────────────────── │ + Swagger    │ ◀───────── │ us-east-2 │
+└────────┘       JSON curado        └──────────────┘  curado    └───────────┘
 ```
 
 Diseño generado en Stitch (MOBILE) y convertido a React Native con `StyleSheet.create`.
+
+## Dónde están documentadas las APIs (Swagger)
+
+| Micro | Swagger UI | JSON OpenAPI |
+|---|---|---|
+| Pokémon Node (Supabase) | `https://pokeapi-expo.onrender.com/api-docs` | `…/api-docs.json` |
+| Anime Python (DynamoDB) | `https://pokeapi-expo-naruto.onrender.com/docs` | `…/openapi.json` (más `/redoc`) |
 
 ## Requisitos
 
 | Qué | Versión |
 |---|---|
-| Node.js | **22 LTS** (`nvm install 22 && nvm use 22`). Node 26 rompe Metro (`ERR_PACKAGE_PATH_NOT_EXPORTED ./rn-get-polyfills`) |
-| Gestor de paquetes | **npm** (hay `package-lock.json`; no usar pnpm: resuelve un CLI global 57 incompatible) |
+| Node.js | **22 LTS**. Node 26 rompe Metro (`ERR_PACKAGE_PATH_NOT_EXPORTED ./rn-get-polyfills`) |
+| Gestor de paquetes | **npm** (hay `package-lock.json`; no usar pnpm) |
 | Expo CLI | local del proyecto (`./node_modules/.bin/expo`, 54.x) |
-| Expo Go en el teléfono | compatible con **SDK 54** |
-| Backend | Node 22 + `backend/node_modules` instalados |
+| Expo Go en el teléfono | compatible con **SDK 54** (vale red móvil/WiFi: la API es https pública) |
+| Python (solo dev del micro anime) | 3.11+ con `pip install -r backend-anime-cloud/requirements.txt` |
 
 ## Instalación
 
 ```bash
-# 1. Node correcto
-export NVM_DIR="$HOME/.config/nvm"; . "$NVM_DIR/nvm.sh"; nvm use 22
-
-# 2. Dependencias del front
+# 1. Dependencias del front
 npm install
 
-# 3. Dependencias del microservicio
-cd backend && npm install && cd ..
+# 2. Micro cloud Pokémon (solo si vas a tocarlo en local)
+cd backend-poke-cloud && npm install && cd ..
+# .env (ignorado): DATABASE_URL=<URI pooler Supabase :6543> + PORT=3101
+
+# 3. Micro cloud Anime (solo si vas a tocarlo en local)
+pip install -r backend-anime-cloud/requirements.txt
+# backend-anime-cloud/.env (ignorado): AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY,
+# AWS_REGION=us-east-2, TABLE_NAME=anime_characters, PORT=3102
 ```
 
 ## Configuración
 
-`EXPO_PUBLIC_API_URL` dice al front dónde está el micro (se incrusta al arrancar Expo:
-cámbiala con Expo detenido).
+`EXPO_PUBLIC_API_URL` / `EXPO_PUBLIC_NARUTO_API_URL` dicen al front dónde están
+los micros (se incrustan al arrancar Expo: cámbialas con Expo detenido + `--clear`).
 
 ```bash
-# .env.development — emulador / mismo PC
-EXPO_PUBLIC_API_URL=http://localhost:3001
-
-# .env.development — teléfono físico en LAN (IP de ESTA máquina)
-EXPO_PUBLIC_API_URL=http://192.168.20.144:3001
+# .env.development — nube pública (vale emulador, teléfono y web)
+EXPO_PUBLIC_API_URL=https://pokeapi-expo.onrender.com
+EXPO_PUBLIC_NARUTO_API_URL=https://pokeapi-expo-naruto.onrender.com
 ```
 
-## Cómo correrlo (2 terminales)
+## Cómo correrlo
 
 ```bash
-# Terminal 1 — microservicio (puerto 3001)
-cd backend && npm start
-curl http://localhost:3001/health  # → {"ok":true}
-
-# Terminal 1b — microservicio Naruto (proceso aparte, puerto 3002)
-cd backend-naruto && npm start
-curl "http://localhost:3002/consultaNaruto?query=sasuke"  # → id 1307
-
-# Terminal 2 — app Expo
-./node_modules/.bin/expo start --clear        # LAN / emulador
-./node_modules/.bin/expo start --tunnel       # si el teléfono no alcanza tu red (pide @expo/ngrok)
+# App Expo (los micros ya viven en Render, no hace falta terminales de backend)
+./node_modules/.bin/expo start --clear
 ```
 
 Luego escanea el QR con Expo Go. `npm run web` también sirve (`expo start --web`).
 
+### Desarrollo local de micros (opcional)
+
+```bash
+# Pokémon :3101 + Swagger http://localhost:3101/api-docs
+cd backend-poke-cloud && node seed.js && npm start
+
+# Anime :3102 + Swagger http://localhost:3102/docs
+cd backend-anime-cloud && python seed.js && uvicorn main:app --port 3102
+```
+
 ## Uso
 
-1. Busca por **nombre o número**: `pikachu`, `25`, `025` (normaliza ceros), `150`.
-   En Naruto: `sasuke`, `1307`, `naruto`.
-2. **4 tabs abajo**: Galería/Datos Pokémon + N-Galería/N-Datos Naruto.
-3. **Galería Pokémon** (tab 1): arte oficial + sprites Normal/Shiny (= 3 imágenes) + anterior/siguiente.
-4. **Datos Pokémon** (tab 2): altura, peso, 6 stats con barras, tipos, habilidad y **todos** los movimientos.
-5. **N-Galería**: imágenes + nombre + clan/aldea + jutsu insignia + anterior/siguiente (por vecinos del catálogo, los IDs no son secuenciales). **N-Datos**: físico, debut, naturalezas, jutsus, familia.
+1. Busca por **nombre o número**: `pikachu`, `25`, `025` (normaliza ceros), `mewtwo`.
+   En Naruto: `sasuke`, `1307`, `pain` (alias de Nagato), `naruto`.
+2. Solo existen **10 por área** (ver Datos abajo); fuera de ellos responde `404`.
+3. **4 tabs abajo**: Galería/Datos Pokémon + N-Galería/N-Datos Naruto.
+4. **Galería Pokémon** (tab 1): arte oficial + sprites Normal/Shiny (= 3 imágenes) +
+   anterior/siguiente dentro de los 10.
+5. **Datos Pokémon** (tab 2): altura, peso, 6 stats con barras, tipos, habilidades y
+   **todos** los movimientos.
+6. **N-Galería**: imágenes + nombre + clan/aldea + jutsu insignia + anterior/siguiente
+   (`prevId`/`nextId` del payload, los IDs no son secuenciales).
+   **N-Datos**: físico, debut, naturalezas, jutsus, familia.
 
 ## Estructura
 
@@ -83,24 +99,33 @@ Luego escanea el QR con Expo Go. `npm run web` también sirve (`expo start --web
 App.js                  Entrada: Provider + header + 4 estados + tabs
 index.js                registerRootComponent
 theme/tokens.js         Paleta (rojo fandom #D64545, amber #FFC83D) y radios
-services/pokemonService.js  fetch al micro (sin axios) + ApiError
-context/PokemonContext.js   Estado global: datos, loading/error/empty, tabs, search/next/prev
+services/pokemonService.js  fetch al micro cloud /pokemons + ApiError (sin axios, sin fallback local)
+services/narutoService.js   fetch al micro cloud /characters + NarutoApiError
+context/PokemonContext.js   Estado global; next/prev por lista de la nube (getPokemonIds)
+context/NarutoContext.js    Estado global; next/prev por prevId/nextId del payload
 components/
   SearchBar.js  · BottomTabs.js  · GalleryScreen.js (3 imágenes)
   DataScreen.js (datos) · StatBar.js · EmptyState.js
-backend/
-  server.js     Microservicio: /consultaPokemon + /health (+ curaduría toCurated)
-  package.json
+  NarutoGalleryScreen.js · NarutoDataScreen.js
+backend-poke-cloud/     Micro Node+Swagger: /pokemons + /health (Supabase). Ver su README.
+backend-anime-cloud/    Micro Python+Swagger: /characters + /health (DynamoDB). Ver su README.
+backend/ · backend-naruto/  Micros locales legacy (puertos 3001/3002): respaldo de desarrollo.
+.tours/                 Tour guiado del flujo (CodeTour).
+docs/img/               Evidencias del reporte de funcionamiento.
 ```
 
-## API del microservicio
+## API cloud
 
-| Método | Descripción |
-|---|---|
-| `GET /consultaPokemon?query=pikachu` | Busca por nombre o ID (`?nombre=` y `/consultaPokemon/:query` son alias) |
-| `GET /health` | `{"ok":true}` |
+| Micro | Método | Descripción |
+|---|---|---|
+| Pokémon | `GET /pokemons` | Lista los 10 (`id`, `name`, `official`, `types`) |
+| Pokémon | `GET /pokemons/:query` | Curado por nombre o ID |
+| Pokémon | `GET /health` | `{"ok":true,"db":true}` |
+| Anime | `GET /characters` | Lista los 10 (resumen) |
+| Anime | `GET /characters/:query` | Curado por nombre, alias o ID (+ `prevId`/`nextId`) |
+| Anime | `GET /health` | `{"ok":true,"db":true}` |
 
-Respuesta curada (ej. `?query=25`):
+Respuesta curada Pokémon (ej. `/pokemons/25`):
 
 ```json
 {
@@ -112,49 +137,41 @@ Respuesta curada (ej. `?query=25`):
 }
 ```
 
-Errores: `400` sin query · `404` Pokémon inexistente (`{error: "…"}`).
+Errores: `400` sin query · `404` fuera de los 10 (`{error: "…"}`; FastAPI usa `{detail: "…"}`).
 
-## Notas de red / dispositivo físico
+## Datos en la nube (10 + 10)
 
-- En VM con **NAT** (`10.0.2.x`) el teléfono no llega: usa **túnel** o pasa la VM a
-  **Adaptador puente** (IP `192.168.x.x`) + `ufw allow 8081/tcp 3001/tcp`.
-- `localhost` en el teléfono = el teléfono: en físico usa siempre la IP LAN.
-- Android 9+ puede bloquear `http://` (cleartext) con *Network request failed*:
-  alternativa por USB → `adb reverse tcp:3001 tcp:3001` + URL `localhost`.
-- El túnel expone Metro sin auth: úsalo en sesiones cortas, no compartas la URL y
-  sin secretos en `EXPO_PUBLIC_*`.
+- **Supabase Postgres** (tabla `pokemons`): bulbasaur, charizard, squirtle, pikachu,
+  gengar, eevee, snorlax, dragonite, mewtwo, lucario. Seed real desde `pokeapi.co`
+  (`backend-poke-cloud/seed.js`).
+- **DynamoDB `us-east-2`** (tabla `anime_characters`): Naruto Uzumaki, Sasuke Uchiha,
+  Sakura Haruno, Kakashi Hatake, Itachi Uchiha, Madara Uchiha, Nagato (alias `pain`),
+  Jiraiya, Hinata Hyūga, Gaara. Seed real desde `dattebayo-api`
+  (`backend-anime-cloud/seed.py`).
+
+## Deploy (Render, plan free)
+
+Ambos son Web Service de la rama `feature/escalamiento-cloud-dbs` (ver `render.yaml`
+de cada micro): build, start, `rootDir`, health check `/health` y env vars
+(`DATABASE_URL` / llaves AWS + región + tabla) pegadas **en el dashboard**,
+nunca en git (`.env` ignorados).
+
+> Render gratis duerme sin tráfico: la primera petición puede tardar ~50s
+> (la app lo muestra como loading; reintenta si expira).
+
+## Notas de red
+
+- Con la nube https ya no hace falta IP LAN, firewall ni túnel para la API.
+- Los micros locales legacy (`backend/` :3001, `backend-naruto/` :3002) siguen
+  disponibles para desarrollo sin internet contra la nube.
 
 ## Problemas conocidos
 
 | Síntoma | Causa | Fix |
 |---|---|---|
 | `ERR_PACKAGE_PATH_NOT_EXPORTED ./rn-get-polyfills` | Node 26 o CLI 57 de pnpm | Node 22 + `./node_modules/.bin/expo` + `npm install` |
-| `ERR_CONNECTION_REFUSED :3001` | micro apagado | `cd backend && npm start` |
-| *Network request failed* solo en teléfono | env con `localhost` o Expo no reiniciado tras cambiarlo | IP LAN + `start --clear` |
-| QR carga infinito | VM en NAT / firewall | `--tunnel` o puente + puertos |
+| Primera búsqueda tarda/falla | Render dormido (free) | Esperar ~50s y reintentar |
+| `404` buscando cualquier nombre | Solo existen 10 por área en la nube | Usa los listados en Datos |
+| QR carga infinito | VM en NAT / firewall | `--tunnel` o adaptador puente |
 | Expo Go avisa de SDK | Go más nuevo que el proyecto (54) | `npx expo upgrade` (cambia el pin de `AGENTS.md`) |
-
-## Nube pública (rama `feature/escalamiento-cloud-dbs`)
-
-El front ya NO usa los micros locales: apunta solo a Render (Swagger incluido).
-
-| Micro | URL pública | Swagger | Fuente de datos |
-|---|---|---|---|
-| Pokémon (Node) | `https://pokeapi-expo.onrender.com` | `/api-docs` | Supabase Postgres (tabla `pokemons`, 10 clásicos) |
-| Anime (Python) | `https://pokeapi-expo-naruto.onrender.com` | `/docs` | DynamoDB `us-east-2` (tabla `anime_characters`, 10 de Naruto) |
-
-```bash
-# .env.development — solo nube (vale para emulador y teléfono: es https público)
-EXPO_PUBLIC_API_URL=https://pokeapi-expo.onrender.com
-EXPO_PUBLIC_NARUTO_API_URL=https://pokeapi-expo-naruto.onrender.com
-```
-
-Endpoints cloud: `GET /pokemons`, `GET /pokemons/:query`, `GET /characters`,
-`GET /characters/:query`, `GET /health` (verifica DB: `{"ok":true,"db":true}`).
-Solo existen 10 por área; fuera de ellos responde `404`. Anterior/siguiente navega
-dentro de esos 10 (Pokémon por lista, Naruto por `prevId`/`nextId`).
-
-> Render gratis duerme sin tráfico: la primera búsqueda puede tardar ~50s
-> (la app lo muestra como loading; reintenta si expira). Secretos (`DATABASE_URL`,
-> llaves AWS) solo en `.env` ignorados y env vars de Render, nunca en git.
-> Micros locales (`backend/`, `backend-naruto/`) quedan como respaldo de desarrollo.
+| DynamoDB `AccessDenied` en `us-east-1` | SCP de cuenta educativa lo bloquea | Usar `us-east-2` |

@@ -39,6 +39,8 @@ function toCurated(r) {
   };
 }
 
+const BASE_URL_DOC = process.env.RENDER_EXTERNAL_URL || `http://localhost:${PORT}`;
+
 const swaggerSpec = swaggerJSDoc({
   definition: {
     openapi: '3.0.0',
@@ -47,7 +49,7 @@ const swaggerSpec = swaggerJSDoc({
       version: '1.0.0',
       description: '10 pokémon curados servidos desde Supabase Postgres. Fuente original de seed: pokeapi.co.',
     },
-    servers: [{ url: 'http://localhost:' + PORT, description: 'Local' }],
+    servers: [{ url: BASE_URL_DOC, description: process.env.RENDER_EXTERNAL_URL ? 'Render' : 'Local' }],
   },
   apis: ['./server.js'],
 });
