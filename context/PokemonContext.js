@@ -14,6 +14,8 @@ export function PokemonProvider({ children }) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [isLiked, setIsLiked] = useState(false);
+  const [isFirst, setIsFirst] = useState(true);
+  const [isLast, setIsLast] = useState(false);
   const [activeTab, setActiveTab] = useState('galeria'); // galeria | datos (Paint: naranja = activa)
   const abortRef = useRef(null);
 
@@ -29,6 +31,12 @@ export function PokemonProvider({ children }) {
       setPokemonData(data);
       setCurrentId(data.id);
       setQuery(data.name);
+      getPokemonIds()
+        .then((ids) => {
+          setIsFirst(ids[0] === data.id);
+          setIsLast(ids[ids.length - 1] === data.id);
+        })
+        .catch(() => {});
       return data;
     } catch (e) {
       if (e?.name !== 'AbortError') {
@@ -80,6 +88,8 @@ export function PokemonProvider({ children }) {
       isEmpty: !loading && !error && !pokemonData,
       isLiked,
       setIsLiked,
+      isFirst,
+      isLast,
       activeTab,
       setActiveTab,
       search,
@@ -87,7 +97,7 @@ export function PokemonProvider({ children }) {
       prev,
       fetchOne,
     }),
-    [pokemonData, currentId, query, loading, error, isLiked, activeTab, search, next, prev, fetchOne],
+    [pokemonData, currentId, query, loading, error, isLiked, isFirst, isLast, activeTab, search, next, prev, fetchOne],
   );
 
   return <PokemonContext.Provider value={value}>{children}</PokemonContext.Provider>;

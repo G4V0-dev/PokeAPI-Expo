@@ -6,9 +6,10 @@ import { COLORS, RADIUS } from '../theme/tokens';
 
 // Vista Principal: MUESTRA 3 IMAGENES (hero official + normal + shiny). Nada de stats/moves aqui.
 export function GalleryScreen() {
-  const { pokemonData, currentId, next, prev, isLiked, setIsLiked } = usePokemon();
+  const { pokemonData, currentId, next, prev, isLiked, setIsLiked, isFirst, isLast } = usePokemon();
   if (!pokemonData) return null;
-  const disabledPrev = !currentId || currentId <= 1;
+  const disabledPrev = isFirst || !currentId || currentId <= 1;
+  const disabledNext = isLast;
   return (
     <View style={styles.card}>
       <View style={styles.header}>
@@ -26,9 +27,9 @@ export function GalleryScreen() {
           <Ionicons name="chevron-back" size={20} color={disabledPrev ? '#A0AEC0' : COLORS.textDark} />
           <Text style={styles.navText}>Atrás</Text>
         </Pressable>
-        <Pressable style={styles.nav} onPress={next}>
+        <Pressable style={[styles.nav, disabledNext && styles.navDisabled]} onPress={next} disabled={disabledNext}>
           <Text style={styles.navText}>Siguiente</Text>
-          <Ionicons name="chevron-forward" size={20} color={COLORS.textDark} />
+          <Ionicons name="chevron-forward" size={20} color={disabledNext ? '#A0AEC0' : COLORS.textDark} />
         </Pressable>
       </View>
 
