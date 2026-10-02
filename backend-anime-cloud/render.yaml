@@ -1,0 +1,19 @@
+services:
+  - type: web
+    name: anime-cloud
+    runtime: python
+    plan: free
+    branch: feature/escalamiento-cloud-dbs
+    rootDir: backend-anime-cloud
+    buildCommand: pip install -r requirements.txt
+    startCommand: uvicorn main:app --host 0.0.0.0 --port $PORT
+    healthCheckPath: /health
+    envVars:
+      - key: AWS_ACCESS_KEY_ID
+        sync: false # pegar en el dashboard de Render (nunca en git)
+      - key: AWS_SECRET_ACCESS_KEY
+        sync: false
+      - key: AWS_REGION
+        value: us-east-2
+      - key: TABLE_NAME
+        value: anime_characters
