@@ -1,11 +1,11 @@
 import React, { createContext, useCallback, useContext, useMemo, useRef, useState } from 'react';
-import { getPokemon } from '../services/pokemonService';
+import { getPokemon, getPokemonIds } from '../services/pokemonService';
 
 const PokemonContext = createContext(null);
 
 /**
  * PokemonProvider: pantalla Galeria muestra 3 imagenes, pantalla Datos muestra el resto.
- * Todo el fetch pasa por el microservicio propio /consultaPokemon (nunca directo a pokeapi.co).
+ * Todo el fetch pasa por el microservicio cloud /pokemons (nunca directo a pokeapi.co).
  */
 export function PokemonProvider({ children }) {
   const [pokemonData, setPokemonData] = useState(null);
@@ -48,12 +48,25 @@ export function PokemonProvider({ children }) {
     fetchOne(query);
   }, [query, fetchOne]);
 
-  const next = useCallback(() => {
-    fetchOne(currentId ? currentId + 1 : 1);
+  // Anterior/siguiente por IDs de la nube (solo 10, no secuenciales).
+  const next = useCallback(async () => {
+    try {
+      const ids = await getPokemonIds();
+      const i = ids.indexOf(currentId);
+      if (i >= 0 && i < ids.length - 1) fetchOne(ids[i + 1]);
+    } catch (e) {
+      if (e?.name !== 'AbortError') setError(e.message || 'Error de red');
+    }
   }, [currentId, fetchOne]);
 
-  const prev = useCallback(() => {
-    if (currentId && currentId > 1) fetchOne(currentId - 1);
+  const prev = useCallback(async () => {
+    try {
+      const ids = await getPokemonIds();
+      const i = ids.indexOf(currentId);
+      if (i > 0) fetchOne(ids[i - 1]);
+    } catch (e) {
+      if (e?.name !== 'AbortError') setError(e.message || 'Error de red');
+    }
   }, [currentId, fetchOne]);
 
   const value = useMemo(

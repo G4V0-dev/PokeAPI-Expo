@@ -133,3 +133,28 @@ Errores: `400` sin query · `404` Pokémon inexistente (`{error: "…"}`).
 | *Network request failed* solo en teléfono | env con `localhost` o Expo no reiniciado tras cambiarlo | IP LAN + `start --clear` |
 | QR carga infinito | VM en NAT / firewall | `--tunnel` o puente + puertos |
 | Expo Go avisa de SDK | Go más nuevo que el proyecto (54) | `npx expo upgrade` (cambia el pin de `AGENTS.md`) |
+
+## Nube pública (rama `feature/escalamiento-cloud-dbs`)
+
+El front ya NO usa los micros locales: apunta solo a Render (Swagger incluido).
+
+| Micro | URL pública | Swagger | Fuente de datos |
+|---|---|---|---|
+| Pokémon (Node) | `https://pokeapi-expo.onrender.com` | `/api-docs` | Supabase Postgres (tabla `pokemons`, 10 clásicos) |
+| Anime (Python) | `https://pokeapi-expo-naruto.onrender.com` | `/docs` | DynamoDB `us-east-2` (tabla `anime_characters`, 10 de Naruto) |
+
+```bash
+# .env.development — solo nube (vale para emulador y teléfono: es https público)
+EXPO_PUBLIC_API_URL=https://pokeapi-expo.onrender.com
+EXPO_PUBLIC_NARUTO_API_URL=https://pokeapi-expo-naruto.onrender.com
+```
+
+Endpoints cloud: `GET /pokemons`, `GET /pokemons/:query`, `GET /characters`,
+`GET /characters/:query`, `GET /health` (verifica DB: `{"ok":true,"db":true}`).
+Solo existen 10 por área; fuera de ellos responde `404`. Anterior/siguiente navega
+dentro de esos 10 (Pokémon por lista, Naruto por `prevId`/`nextId`).
+
+> Render gratis duerme sin tráfico: la primera búsqueda puede tardar ~50s
+> (la app lo muestra como loading; reintenta si expira). Secretos (`DATABASE_URL`,
+> llaves AWS) solo en `.env` ignorados y env vars de Render, nunca en git.
+> Micros locales (`backend/`, `backend-naruto/`) quedan como respaldo de desarrollo.

@@ -18,4 +18,9 @@ Read the exact versioned docs at https://docs.expo.dev/versions/v54.0.0/ before 
 - **Estado global**: `context/PokemonContext.js` (`usePokemon`). Galería = 3 imágenes,
   Datos = resto. 4 estados: loading / error / empty / content.
 - **Tokens**: `theme/tokens.js` (rojo fandom `#D64545`). Sin NativeWind salvo pedido explícito.
+- **Cloud (rama escalamiento)**: el front apunta SOLO a Render (sin fallback local).
+  Pokémon → `https://pokeapi-expo.onrender.com/pokemons/:query` (`backend-poke-cloud/`,
+  Supabase). Anime → `https://pokeapi-expo-naruto.onrender.com/characters/:query`
+  (`backend-anime-cloud/`, DynamoDB `us-east-2`). Anterior/siguiente Pokémon por lista
+  de la nube (`getPokemonIds`); Naruto por `prevId`/`nextId` del payload.
 - Tras cambiar `.env*`, reiniciar Expo (`--clear`): el env se incrusta al arrancar.
