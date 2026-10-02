@@ -1,0 +1,15 @@
+services:
+  - type: web
+    name: pokeapi-cloud
+    runtime: node
+    plan: free
+    branch: feature/escalamiento-cloud-dbs
+    rootDir: backend-poke-cloud
+    buildCommand: npm install
+    startCommand: npm start
+    healthCheckPath: /health
+    envVars:
+      - key: DATABASE_URL
+        sync: false # pegar el URI pooler Supabase (:6543) en el dashboard de Render
+      - key: NODE_VERSION
+        value: 22.16.0
