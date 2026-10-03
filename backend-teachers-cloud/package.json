@@ -1,0 +1,16 @@
+{
+  "name": "teachers-cloud-microservice",
+  "version": "1.0.0",
+  "description": "Microservicio cloud Docentes UNINPAHU: Node http nativo + DynamoDB, sin Express. Despliegue en Render.",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "seed": "node seed.js"
+  },
+  "engines": { "node": "22.x" },
+  "dependencies": {
+    "@aws-sdk/client-dynamodb": "^3.600.0",
+    "@aws-sdk/lib-dynamodb": "^3.600.0",
+    "dotenv": "^16.4.5"
+  }
+}

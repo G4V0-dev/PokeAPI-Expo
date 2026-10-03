@@ -1,10 +1,11 @@
 import React, { useState } from 'react';
 import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
-// Entrada de la app: Providers globales + Home con área (pokemon|naruto),
-// 4 estados (loading / error / empty / content) y 4 tabs.
+// Entrada de la app: Providers globales + Home con área (pokemon|naruto|teachers),
+// 4 estados (loading / error / empty / content) y 5 tabs.
 import { PokemonProvider, usePokemon } from './context/PokemonContext';
 import { NarutoProvider, useNaruto } from './context/NarutoContext';
+import { TeachersProvider, useTeachers } from './context/TeachersContext';
 import { ThemeProvider, useTheme } from './context/ThemeContext';
 import { RADIUS } from './theme/tokens';
 import { SearchBar } from './components/SearchBar';
@@ -13,25 +14,29 @@ import { GalleryScreen } from './components/GalleryScreen';
 import { DataScreen } from './components/DataScreen';
 import { NarutoGalleryScreen } from './components/NarutoGalleryScreen';
 import { NarutoDataScreen } from './components/NarutoDataScreen';
+import { TeachersScreen } from './components/TeachersScreen';
+import { TeacherDetailScreen } from './components/TeacherDetailScreen';
 import { EmptyState } from './components/EmptyState';
 import { ThemeFab } from './components/ThemeFab';
 import { ThemeSettingsModal } from './components/ThemeSettingsModal';
 
 function Home() {
-  const [area, setArea] = useState('pokemon'); // pokemon | naruto
+  const [area, setArea] = useState('pokemon'); // pokemon | naruto | teachers
   const [settingsVisible, setSettingsVisible] = useState(false);
   const poke = usePokemon();
   const naru = useNaruto();
+  const teach = useTeachers();
   const { colors, narutoColors } = useTheme();
-  const ctx = area === 'pokemon' ? poke : naru;
+  const ctx = area === 'pokemon' ? poke : area === 'naruto' ? naru : teach;
   const isNaruto = area === 'naruto';
+  const isTeachers = area === 'teachers';
   const accent = isNaruto ? narutoColors.primary : colors.primary;
-  const title = isNaruto ? 'Ninja Explorer' : 'Poké Explorer';
+  const title = isTeachers ? 'Profesores' : isNaruto ? 'Ninja Explorer' : 'Poké Explorer';
 
   return (
     <View style={[styles.container, { backgroundColor: colors.background }]}>
       <View style={[styles.header, { backgroundColor: accent }]}>
-        <MaterialCommunityIcons name={isNaruto ? 'ninja' : 'pokeball'} size={28} color="#fff" />
+        <MaterialCommunityIcons name={isTeachers ? 'school' : isNaruto ? 'ninja' : 'pokeball'} size={28} color="#fff" />
         <Text style={styles.headerTitle}>{title}</Text>
       </View>
 
@@ -41,8 +46,8 @@ function Home() {
           onChange={ctx.setQuery}
           onSearch={ctx.search}
           color={accent}
-          placeholder={isNaruto ? 'Ej. sasuke, 1307, sakura' : 'Ej. pikachu, 25, charizard'}
-          label={isNaruto ? 'Buscar personaje por nombre o número' : 'Buscar pokemon por nombre o número'}
+          placeholder={isTeachers ? 'Ej. lotus, javier, elfar' : isNaruto ? 'Ej. sasuke, 1307, sakura' : 'Ej. pikachu, 25, charizard'}
+          label={isTeachers ? 'Buscar docente por nombre' : isNaruto ? 'Buscar personaje por nombre o número' : 'Buscar pokemon por nombre o número'}
         />
 
         {ctx.loading && <ActivityIndicator size="large" color={accent} style={styles.loader} />}
@@ -57,13 +62,15 @@ function Home() {
         )}
 
         {!ctx.loading && !ctx.error && ctx.isEmpty && (
-          <EmptyState message={isNaruto ? 'Busca un personaje para ver galería y datos' : undefined} />
+          <EmptyState message={isTeachers ? 'Busca un docente para ver su información' : isNaruto ? 'Busca un personaje para ver galería y datos' : undefined} />
         )}
 
         {!ctx.loading && !ctx.error && !ctx.isEmpty && (
-          isNaruto
-            ? (naru.activeTab === 'galeria' ? <NarutoGalleryScreen /> : <NarutoDataScreen />)
-            : (poke.activeTab === 'galeria' ? <GalleryScreen /> : <DataScreen />)
+          isTeachers
+            ? (teach.view === 'detail' ? <TeacherDetailScreen /> : <TeachersScreen />)
+            : isNaruto
+              ? (naru.activeTab === 'galeria' ? <NarutoGalleryScreen /> : <NarutoDataScreen />)
+              : (poke.activeTab === 'galeria' ? <GalleryScreen /> : <DataScreen />)
         )}
       </ScrollView>
 
@@ -79,7 +86,9 @@ export default function App() {
     <ThemeProvider>
       <PokemonProvider>
         <NarutoProvider>
-          <Home />
+          <TeachersProvider>
+            <Home />
+          </TeachersProvider>
         </NarutoProvider>
       </PokemonProvider>
     </ThemeProvider>

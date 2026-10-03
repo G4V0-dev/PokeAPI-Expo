@@ -1,0 +1,21 @@
+services:
+  - type: web
+    name: pokeapi-expo-teachers
+    runtime: node
+    plan: free
+    branch: feature/escalamiento-cloud-dbs
+    rootDir: backend-teachers-cloud
+    buildCommand: npm install
+    startCommand: npm start
+    healthCheckPath: /health
+    envVars:
+      - key: AWS_ACCESS_KEY_ID
+        sync: false # pegar en el dashboard de Render (nunca en git)
+      - key: AWS_SECRET_ACCESS_KEY
+        sync: false
+      - key: AWS_REGION
+        value: us-east-2
+      - key: TABLE_NAME
+        value: teachers
+      - key: NODE_VERSION
+        value: 22.16.0

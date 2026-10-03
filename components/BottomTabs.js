@@ -6,21 +6,24 @@ import { useNaruto } from '../context/NarutoContext';
 import { useTheme } from '../context/ThemeContext';
 import { RADIUS } from '../theme/tokens';
 
-// 4 tabs: Galería/Datos de Pokémon + Galería/Datos de Naruto.
+// 5 tabs: Galería/Datos de Pokémon + Galería/Datos de Naruto + Docentes.
 // El área activa la maneja Home; cada tab fija área + tab interna de su context.
+// Docentes es pantalla simple (sin galeria/datos): solo fija el área.
 export function BottomTabs({ area, setArea }) {
   const poke = usePokemon();
   const naru = useNaruto();
   const { colors, narutoColors } = useTheme();
   const go = (nextArea, tab) => {
     setArea(nextArea);
-    (nextArea === 'pokemon' ? poke : naru).setActiveTab(tab);
+    if (nextArea === 'pokemon') poke.setActiveTab(tab);
+    else if (nextArea === 'naruto') naru.setActiveTab(tab);
   };
   const tabs = [
     { key: 'poke-galeria', area: 'pokemon', label: 'Galería', icon: 'grid', active: area === 'pokemon' && poke.activeTab === 'galeria', onPress: () => go('pokemon', 'galeria') },
     { key: 'poke-datos', area: 'pokemon', label: 'Datos', icon: 'list', active: area === 'pokemon' && poke.activeTab === 'datos', onPress: () => go('pokemon', 'datos') },
     { key: 'naru-galeria', area: 'naruto', label: 'N-Galería', icon: 'image', active: area === 'naruto' && naru.activeTab === 'galeria', onPress: () => go('naruto', 'galeria') },
     { key: 'naru-datos', area: 'naruto', label: 'N-Datos', icon: 'book', active: area === 'naruto' && naru.activeTab === 'datos', onPress: () => go('naruto', 'datos') },
+    { key: 'teach', area: 'teachers', label: 'Docentes', icon: 'school', active: area === 'teachers', onPress: () => setArea('teachers') },
   ];
   return (
     <View style={[styles.bar, { backgroundColor: colors.surface, borderTopColor: colors.border }]}>

@@ -52,6 +52,7 @@ __pycache__/
 # secrets locales de micros cloud (nunca commitear)
 backend-poke-cloud/.env
 backend-anime-cloud/.env
+backend-teachers-cloud/.env
 
 # informe local (no se publica)
 FUNCIONAMIENTO-MOBILE.md
