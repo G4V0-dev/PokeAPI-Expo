@@ -32,10 +32,10 @@ async function initRepo() {
   }
   try {
     const { DynamoDBClient } = require('@aws-sdk/client-dynamodb');
-    const { DynamoDBDocumentClient, ScanCommand, GetItemCommand } = require('@aws-sdk/lib-dynamodb');
+    const { DynamoDBDocumentClient, ScanCommand, GetCommand } = require('@aws-sdk/lib-dynamodb');
     const client = new DynamoDBClient({ region: AWS_REGION });
     const docClient = DynamoDBDocumentClient.from(client);
-    const dynamo = createDynamoRepository({ docClient, tableName: TABLE_NAME, ScanCommand, GetItemCommand });
+    const dynamo = createDynamoRepository({ docClient, tableName: TABLE_NAME, ScanCommand, GetCommand });
     await dynamo.health(); // valida conexion + tabla
     repo = dynamo;
     console.log(`[teachers] conectado a DynamoDB ${AWS_REGION}/${TABLE_NAME}.`);

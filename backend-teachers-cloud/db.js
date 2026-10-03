@@ -86,7 +86,7 @@ function createMemoryRepository(seedItems) {
   };
 }
 
-function createDynamoRepository({ docClient, tableName, ScanCommand, GetItemCommand }) {
+function createDynamoRepository({ docClient, tableName, ScanCommand, GetCommand }) {
   async function scanAll() {
     const out = [];
     let ExclusiveStartKey;
@@ -119,7 +119,7 @@ function createDynamoRepository({ docClient, tableName, ScanCommand, GetItemComm
       if (!q) return null;
       if (/^\d+$/.test(q)) {
         const r = await docClient.send(
-          new GetItemCommand({ TableName: tableName, Key: { id: Number(q) } })
+          new GetCommand({ TableName: tableName, Key: { id: Number(q) } })
         );
         return r.Item ? toDetail(r.Item) : null;
       }
