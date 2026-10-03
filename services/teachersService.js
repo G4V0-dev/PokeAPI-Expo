@@ -1,7 +1,7 @@
 // Cliente del microservicio cloud Docentes (DynamoDB via Render, solo URLs publicas).
 // Sin fallback local por decision de escalamiento: todo va a la nube.
 // Solo path/query params, nunca body.
-const BASE_URL = process.env.EXPO_PUBLIC_TEACHERS_API_URL || 'https://pokeapi-expo-teachers.onrender.com';
+const BASE_URL = process.env.EXPO_PUBLIC_TEACHERS_API_URL || 'https://pokeapi-expo-profesores.onrender.com';
 
 export class TeachersApiError extends Error {
   constructor(message, status) {
