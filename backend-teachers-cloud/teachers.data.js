@@ -4,12 +4,11 @@
  * (LinkedIn responde 999 al scraping directo, por eso los textos son
  * res posibilitadas + headline/description y NO scraping literal del HTML).
  *
- * FOTOS: se resuelven en vivo vía unavatar.io (proxy público de avatares
- * LinkedIn por vanity name, sin scraping). Verificado 2026-10-03:
- * Elfar y Javier devuelven foto real; Lotus no expone foto pública
- * (unavatar responde silueta) y queda con placeholder de iniciales
- * hasta pegar su URL real. Para fijar una foto definitiva, reemplazar
- * `photo` por la URL directa (S3/Cloudinary) y re-ejecutar `npm run seed`.
+ * FOTOS: Elfar y Javier se resuelven en vivo vía unavatar.io (proxy público
+ * de avatares LinkedIn por vanity name, sin scraping). La de Lotus viene de
+ * la web oficial UNINPAHU (su LinkedIn no expone foto pública). Para fijar
+ * una foto definitiva, reemplazar `photo` por la URL directa (S3/Cloudinary)
+ * y re-ejecutar `npm run seed`.
  */
 
 function avatar(name) {
@@ -55,7 +54,7 @@ const TEACHERS = [
         'Psicologo, maestrando en Filosofia (UNAL) y coordinador de investigacion en educacion superior.',
       description:
         'Dirige Investigacion, Proyeccion Social, Internacionalizacion, Idiomas, Practicas y Biblioteca en UNINPAHU; gestiona grupos, proyectos, semilleros y espacios academicos; acompana calidad, visitas de pares ante MEN y MinCiencias; formula politicas, lineamientos y documentos maestros. Docente lider de investigacion Facultad de Ingenieria UNINPAHU y lider del semillero de Epistemologia, Logica y Etica. Intereses: etica, bioetica, psicologia moral, filosofia politica, filosofia de la mente y educacion superior. Fuente: LinkedIn + uninpahu.edu.co.',
-      photo: avatar('Lotus King Salcedo Vallejo'), // TODO: sin foto publica en LinkedIn (unavatar da silueta); reemplazar por URL real
+      photo: 'https://uninpahu.edu.co/wp-content/uploads/elementor/thumbs/Lotus-King-2-scaled-e1724260154302-rd7sbvc649grlvtvbegnn91si85yjd2v65ycugjkw8.jpg', // foto oficial web UNINPAHU (LinkedIn sin foto publica)
       profileUrl: 'https://www.linkedin.com/in/lotus-king-salcedo-vallejo/',
       area: 'Investigacion UNINPAHU',
     },

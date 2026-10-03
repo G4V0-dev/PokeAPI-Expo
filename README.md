@@ -195,8 +195,8 @@ Respuesta curada Docentes (ej. `/teachers/2`):
 - **DynamoDB `us-east-2`** (tabla `teachers`): Elfar Didier Morantes Sánchez,
   Lotus King Salcedo Vallejo, Javier Duvan Amado Acosta (foto, profesión y
   descripción de LinkedIn + `profileUrl`). Seed curado desde info pública
-  (`backend-teachers-cloud/seed.js`; fotos en vivo vía `unavatar.io`, Lotus
-  con placeholder de iniciales porque no expone foto pública —ver README del micro).
+  (`backend-teachers-cloud/seed.js`; fotos sin scraping: Elfar/Javier vía
+  `unavatar.io`, Lotus desde la web oficial UNINPAHU —ver README del micro).
 
 ## Deploy (Render, plan free)
 

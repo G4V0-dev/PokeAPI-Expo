@@ -33,10 +33,10 @@ curl http://localhost:3103/teachers/2
 
 ## Fotos
 
-LinkedIn responde `999` al scraping sin sesión, por eso `photo` se resuelve
-en vivo vía `unavatar.io/linkedin/<vanity>` (proxy público, verificado):
-Elfar y Javier traen foto real; **Lotus no expone foto pública** (responde
-silueta) y queda con placeholder de iniciales hasta pegar su URL real.
+LinkedIn responde `999` al scraping sin sesión, por eso las fotos se
+resuelven sin scraping: Elfar y Javier en vivo vía
+`unavatar.io/linkedin/<vanity>` (proxy público); la de Lotus es su foto
+oficial de la web UNINPAHU (su LinkedIn no expone foto pública).
 Para fijar una foto definitiva: reemplazar `photo` en `teachers.data.js`
 (S3/Cloudinary o URL directa) y re-ejecutar `npm run seed` (no requiere
 redesplegar: el dato vive en DynamoDB).
