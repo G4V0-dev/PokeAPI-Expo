@@ -144,4 +144,4 @@ export const THEMES = [
   },
 ];
 
-export const DEFAULT_THEME_ID = 'fandom';
+export const DEFAULT_THEME_ID = 'oceano';

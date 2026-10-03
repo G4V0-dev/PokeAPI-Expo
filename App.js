@@ -17,12 +17,9 @@ import { NarutoDataScreen } from './components/NarutoDataScreen';
 import { TeachersScreen } from './components/TeachersScreen';
 import { TeacherDetailScreen } from './components/TeacherDetailScreen';
 import { EmptyState } from './components/EmptyState';
-import { ThemeFab } from './components/ThemeFab';
-import { ThemeSettingsModal } from './components/ThemeSettingsModal';
 
 function Home() {
   const [area, setArea] = useState('pokemon'); // pokemon | naruto | teachers
-  const [settingsVisible, setSettingsVisible] = useState(false);
   const poke = usePokemon();
   const naru = useNaruto();
   const teach = useTeachers();
@@ -46,7 +43,7 @@ function Home() {
           onChange={ctx.setQuery}
           onSearch={ctx.search}
           color={accent}
-          placeholder={isTeachers ? 'Ej. lotus, javier, elfar' : isNaruto ? 'Ej. sasuke, 1307, sakura' : 'Ej. pikachu, 25, charizard'}
+          placeholder={isTeachers ? 'Ej. leonardo, fredy, elfar' : isNaruto ? 'Ej. sasuke, 1307, sakura' : 'Ej. pikachu, 25, charizard'}
           label={isTeachers ? 'Buscar docente por nombre' : isNaruto ? 'Buscar personaje por nombre o número' : 'Buscar pokemon por nombre o número'}
         />
 
@@ -75,8 +72,6 @@ function Home() {
       </ScrollView>
 
       <BottomTabs area={area} setArea={setArea} />
-      <ThemeFab onPress={() => setSettingsVisible(true)} />
-      <ThemeSettingsModal visible={settingsVisible} onClose={() => setSettingsVisible(false)} />
     </View>
   );
 }
