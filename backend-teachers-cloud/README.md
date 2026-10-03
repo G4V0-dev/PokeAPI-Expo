@@ -33,9 +33,13 @@ curl http://localhost:3103/teachers/2
 
 ## Fotos
 
-LinkedIn responde `999` al scraping sin sesión, por eso `photo` es placeholder
-`ui-avatars.com` temporal. Para producción: subir foto real a S3/Cloudinary,
-reemplazar `photo` en `teachers.data.js` y re-ejecutar `npm run seed`.
+LinkedIn responde `999` al scraping sin sesión, por eso `photo` se resuelve
+en vivo vía `unavatar.io/linkedin/<vanity>` (proxy público, verificado):
+Elfar y Javier traen foto real; **Lotus no expone foto pública** (responde
+silueta) y queda con placeholder de iniciales hasta pegar su URL real.
+Para fijar una foto definitiva: reemplazar `photo` en `teachers.data.js`
+(S3/Cloudinary o URL directa) y re-ejecutar `npm run seed` (no requiere
+redesplegar: el dato vive en DynamoDB).
 
 ## Render
 

@@ -4,14 +4,21 @@
  * (LinkedIn responde 999 al scraping directo, por eso los textos son
  * res posibilitadas + headline/description y NO scraping literal del HTML).
  *
- * FOTO: LinkedIn exige sesion para la foto original (999 sin login).
- * Se usa placeholder ui-avatars temporal. Para produccion, reemplazar
- * `photo` por la URL real de la foto (subir a S3/Cloudinary o pegar
- * la URL publica del perfil) y re-ejecutar `npm run seed`.
+ * FOTOS: se resuelven en vivo vía unavatar.io (proxy público de avatares
+ * LinkedIn por vanity name, sin scraping). Verificado 2026-10-03:
+ * Elfar y Javier devuelven foto real; Lotus no expone foto pública
+ * (unavatar responde silueta) y queda con placeholder de iniciales
+ * hasta pegar su URL real. Para fijar una foto definitiva, reemplazar
+ * `photo` por la URL directa (S3/Cloudinary) y re-ejecutar `npm run seed`.
  */
 
 function avatar(name) {
   return `https://ui-avatars.com/api/?name=${encodeURIComponent(name)}&background=D64545&color=fff&size=512`;
+}
+
+// Proxy en vivo a la foto pública de LinkedIn (vanity name exacto del perfil).
+function linkedinPhoto(vanity) {
+  return `https://unavatar.io/linkedin/${vanity}`;
 }
 
 const TEACHERS = [
@@ -29,7 +36,7 @@ const TEACHERS = [
         'Ingeniero Electronico, Especialista en Ingenieria de Software, candidato a Magister en Educacion y E-learning.',
       description:
         'Curioso y con ganas de aprender cosas nuevas. Desarrollador FullStack con enfasis en backend en C, C++, C#, Python, Java, JavaScript, PHP, HTML5+CSS3-Bootstrap; bases de datos MariaDB, PostgreSQL, Oracle, SQLServer y desarrollo movil Android. Instructor y docente universitario (bootcamps frontend, participante Bootcamp IA UNINPAHU). Fuente publica: p4s.co + posts LinkedIn.',
-      photo: avatar('Elfar Didier Morantes Sanchez'),
+      photo: linkedinPhoto('elfar-didier-morantes-s%C3%A1nchez'),
       profileUrl: 'https://www.linkedin.com/in/elfar-didier-morantes-s%C3%A1nchez/',
       area: 'Ingenieria y Tecnologias de la Informacion',
     },
@@ -48,7 +55,7 @@ const TEACHERS = [
         'Psicologo, maestrando en Filosofia (UNAL) y coordinador de investigacion en educacion superior.',
       description:
         'Dirige Investigacion, Proyeccion Social, Internacionalizacion, Idiomas, Practicas y Biblioteca en UNINPAHU; gestiona grupos, proyectos, semilleros y espacios academicos; acompana calidad, visitas de pares ante MEN y MinCiencias; formula politicas, lineamientos y documentos maestros. Docente lider de investigacion Facultad de Ingenieria UNINPAHU y lider del semillero de Epistemologia, Logica y Etica. Intereses: etica, bioetica, psicologia moral, filosofia politica, filosofia de la mente y educacion superior. Fuente: LinkedIn + uninpahu.edu.co.',
-      photo: avatar('Lotus King Salcedo Vallejo'),
+      photo: avatar('Lotus King Salcedo Vallejo'), // TODO: sin foto publica en LinkedIn (unavatar da silueta); reemplazar por URL real
       profileUrl: 'https://www.linkedin.com/in/lotus-king-salcedo-vallejo/',
       area: 'Investigacion UNINPAHU',
     },
@@ -67,7 +74,7 @@ const TEACHERS = [
         'Directivo senior en educacion superior | Exrector, exgerente general FODESEP y exdirector ejecutivo ACIET.',
       description:
         'Trayectoria como rector, vicerrector academico, gerente general, director ejecutivo y consultor estrategico de IES. Lidero gobierno institucional, sostenibilidad financiera, aseguramiento de la calidad, transformacion digital, educacion virtual y diversificacion de ingresos; registros calificados, acreditacion y fortalecimiento organizacional. Exgerente general FODESEP (2022-2024), exdirector ejecutivo ACIET (2019-2021), rector UVIRTUAL y vicerrector CUN. Fuente: LinkedIn.',
-      photo: avatar('Javier Duvan Amado Acosta'),
+      photo: linkedinPhoto('javier-duvan-amado-acosta-82b21851'),
       profileUrl: 'https://www.linkedin.com/in/javier-duvan-amado-acosta-82b21851/',
       area: 'Direccion universitaria',
     },
