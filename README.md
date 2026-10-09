@@ -91,9 +91,9 @@ cd backend-poke-cloud && node seed.js && npm start
 # Anime :3102 + Swagger http://localhost:3102/docs
 cd backend-anime-cloud && python seed.js && uvicorn main:app --port 3102
 
-# Docentes :3103 + Docs http://localhost:3103/docs (Node nativo, sin Express)
+# Docentes :3103 + Docs http://localhost:3103/docs (Node nativo, sin Express, CRUD)
 cd backend-teachers-cloud && npm run seed && npm start
-# (el seed crea la tabla teachers si falta; sin llaves AWS el micro corre en memoria)
+# (el seed crea la tabla teachers si falta y carga teachers.seed.json; sin llaves AWS el micro responde 503, sin fallback en memoria)
 ```
 
 ## Uso
@@ -101,8 +101,9 @@ cd backend-teachers-cloud && npm run seed && npm start
 1. Busca por **nombre o número**: `pikachu`, `25`, `025` (normaliza ceros), `mewtwo`.
    En Naruto: `sasuke`, `1307`, `pain` (alias de Nagato), `naruto`.
    En Docentes: `lotus`, `javier`, `elfar` o `1`, `2`, `3`.
-2. Solo existen **10 por área Pokémon/Naruto y 3 docentes** (ver Datos abajo);
-   fuera de ellos responde `404`.
+2. Solo existen **10 por área Pokémon/Naruto** (ver Datos abajo);
+   fuera de ellos responde `404`. **Docentes es CRUD abierto**: tantos
+   como haya en DynamoDB (semilla inicial en `teachers.seed.json`).
 3. **5 tabs abajo**: Galería/Datos Pokémon + N-Galería/N-Datos Naruto + Docentes.
 4. **Galería Pokémon** (tab 1): arte oficial + sprites Normal/Shiny (= 3 imágenes) +
    anterior/siguiente dentro de los 10.
@@ -111,9 +112,11 @@ cd backend-teachers-cloud && npm run seed && npm start
 6. **N-Galería**: imágenes + nombre + clan/aldea + jutsu insignia + anterior/siguiente
    (`prevId`/`nextId` del payload, los IDs no son secuenciales).
    **N-Datos**: físico, debut, naturalezas, jutsus, familia.
-7. **Docentes** (tab 5, header `Profesores`): lista simple de los 3 docentes UNINPAHU
+7. **Docentes** (tab 5, header `Profesores`): lista desde DynamoDB
    (foto, profesión) + botón **Ver información** (fuera de los tabs) que abre el
-   detalle (descripción de la red social + link a LinkedIn) con botón **Volver**.
+   detalle (descripción + link a LinkedIn) con botón **Volver**.
+   Admin CRUD: **Agregar** en la lista, **Editar/Eliminar** en lista y detalle
+   (formulario `TeacherForm.js`, sin auth por decisión del proyecto).
 
 ## Estructura
 
@@ -123,18 +126,18 @@ index.js                registerRootComponent
 theme/tokens.js         Paleta (rojo fandom #D64545, amber #FFC83D) y radios
 services/pokemonService.js  fetch al micro cloud /pokemons + ApiError (sin axios, sin fallback local)
 services/narutoService.js   fetch al micro cloud /characters + NarutoApiError
-services/teachersService.js  fetch al micro cloud /teachers + TeachersApiError (path/query, sin body)
+services/teachersService.js  fetch al micro cloud /teachers + TeachersApiError (GET path/query; CRUD con body JSON)
 context/PokemonContext.js   Estado global; next/prev por lista de la nube (getPokemonIds)
 context/NarutoContext.js    Estado global; next/prev por prevId/nextId del payload
-context/TeachersContext.js  Estado global simple; lista auto + vista list|detail
+context/TeachersContext.js  Estado global; lista auto + vista list|detail + admin CRUD (formMode/submitForm/removeTeacher)
 components/
   SearchBar.js  · BottomTabs.js  · GalleryScreen.js (3 imágenes)
   DataScreen.js (datos) · StatBar.js · EmptyState.js
   NarutoGalleryScreen.js · NarutoDataScreen.js
-  TeachersScreen.js (lista 3 + botón Ver información) · TeacherDetailScreen.js
+  TeachersScreen.js (lista + Agregar/Borrar + botón Ver información) · TeacherDetailScreen.js (detalle + Editar/Eliminar) · TeacherForm.js (form Crear/Editar)
 backend-poke-cloud/     Micro Node+Swagger: /pokemons + /health (Supabase). Ver su README.
 backend-anime-cloud/    Micro Python+Swagger: /characters + /health (DynamoDB). Ver su README.
-backend-teachers-cloud/ Micro Node NATIVO sin Express + Swagger: /teachers + /health (DynamoDB). Ver su README.
+backend-teachers-cloud/ Micro Node NATIVO sin Express + Swagger CRUD: /teachers + /health (solo DynamoDB, 503 sin BD). Ver su README.
 backend/ · backend-naruto/  Micros locales legacy (puertos 3001/3002): respaldo de desarrollo.
 .tours/                 Tour guiado del flujo (CodeTour).
 docs/img/               Evidencias del reporte de funcionamiento.
@@ -150,10 +153,14 @@ docs/img/               Evidencias del reporte de funcionamiento.
 | Anime | `GET /characters` | Lista los 10 (resumen) |
 | Anime | `GET /characters/:query` | Curado por nombre, alias o ID (+ `prevId`/`nextId`) |
 | Anime | `GET /health` | `{"ok":true,"db":true}` |
-| Docentes | `GET /teachers` | Lista los 3 (resumen: `id`, `name`, `profession`, `photo`) |
-| Docentes | `GET /teachers?query=lotus` | Filtrado por query param (nombre/profesión) |
-| Docentes | `GET /teachers/:query` | Detalle por ID (`2`) o nombre/alias (`lotus`, `elfar`, `javier`) |
-| Docentes | `GET /health` | `{"ok":true,"db":true,"mode":"dynamodb"}` |
+| Docentes | `GET /teachers` | Lista resumen (`id`, `name`, `profession`, `photo`) |
+| Docentes | `GET /teachers?query=leonardo` | Filtrado por query param (nombre/profesión) |
+| Docentes | `GET /teachers/:query` | Detalle por ID (`2`) o nombre/alias |
+| Docentes | `POST /teachers` | Crea (body JSON `name`+`profession`, → `201`, id = max+1) |
+| Docentes | `PUT /teachers/:id` | Reemplazo total por ID numérico (body JSON) |
+| Docentes | `PATCH /teachers/:id` | Parcial por ID numérico (body JSON) |
+| Docentes | `DELETE /teachers/:id` | Borra por ID numérico |
+| Docentes | `GET /health` | `{"ok":true,"db":true,"mode":"dynamodb"}` (`503` sin BD, sin fallback) |
 
 Respuesta curada Pokémon (ej. `/pokemons/25`):
 
@@ -167,8 +174,8 @@ Respuesta curada Pokémon (ej. `/pokemons/25`):
 }
 ```
 
-Errores: `400` sin query · `404` fuera del catálogo (`{error: "…"}`; FastAPI usa `{detail: "…"}`).
-Solo lectura por `GET`: `405` a otro método (sin body params).
+Errores: `400` sin query / validación CRUD (`name`+`profession`) · `404` fuera del catálogo (`{error: "…"}`; FastAPI usa `{detail: "…"}`) · `503` docentes sin BD (sin fallback).
+Pokémon/Anime solo lectura por `GET` (`405` a otro método); **Docentes permite escrituras CRUD con body JSON** (abiertas sin auth).
 
 Respuesta curada Docentes (ej. `/teachers/2`):
 
@@ -183,7 +190,7 @@ Respuesta curada Docentes (ej. `/teachers/2`):
 }
 ```
 
-## Datos en la nube (10 + 10 + 3)
+## Datos en la nube (10 + 10 + N docentes)
 
 - **Supabase Postgres** (tabla `pokemons`): bulbasaur, charizard, squirtle, pikachu,
   gengar, eevee, snorlax, dragonite, mewtwo, lucario. Seed real desde `pokeapi.co`
@@ -192,11 +199,10 @@ Respuesta curada Docentes (ej. `/teachers/2`):
   Sakura Haruno, Kakashi Hatake, Itachi Uchiha, Madara Uchiha, Nagato (alias `pain`),
   Jiraiya, Hinata Hyūga, Gaara. Seed real desde `dattebayo-api`
   (`backend-anime-cloud/seed.py`).
-- **DynamoDB `us-east-2`** (tabla `teachers`): Elfar Didier Morantes Sánchez,
-  Lotus King Salcedo Vallejo, Javier Duvan Amado Acosta (foto, profesión y
-  descripción de LinkedIn + `profileUrl`). Seed curado desde info pública
-  (`backend-teachers-cloud/seed.js`; fotos sin scraping: Elfar/Javier vía
-  `unavatar.io`, Lotus desde la web oficial UNINPAHU —ver README del micro).
+- **DynamoDB `us-east-2`** (tabla `teachers`, CRUD): semilla inicial Elfar,
+  Leonardo, Fredy (foto, profesión y descripción + `profileUrl`) en
+  `backend-teachers-cloud/teachers.seed.json` (respaldo para `npm run seed`;
+  fotos sin scraping —ver README del micro). El front administra altas/bajas/cambios.
 
 ## Deploy (Render, plan free)
 
@@ -222,7 +228,7 @@ con `node index.js`).
 |---|---|---|
 | `ERR_PACKAGE_PATH_NOT_EXPORTED ./rn-get-polyfills` | Node 26 o CLI 57 de pnpm | Node 22 + `./node_modules/.bin/expo` + `npm install` |
 | Primera búsqueda tarda/falla | Render dormido (free) | Esperar ~50s y reintentar |
-| `404` buscando cualquier nombre | Solo existen 10 por área Pokémon/Naruto y 3 docentes | Usa los listados en Datos |
+| `404` buscando cualquier nombre | Solo existen 10 por área Pokémon/Naruto; docentes depende de DynamoDB | Usa los listados en Datos o el CRUD |
 | QR carga infinito | VM en NAT / firewall | `--tunnel` o adaptador puente |
 | Expo Go avisa de SDK | Go más nuevo que el proyecto (54) | `npx expo upgrade` (cambia el pin de `AGENTS.md`) |
 | DynamoDB `AccessDenied` en `us-east-1` | SCP de cuenta educativa lo bloquea | Usar `us-east-2` |

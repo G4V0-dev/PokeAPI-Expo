@@ -1,13 +1,19 @@
 /**
- * Seed: crea tabla teachers (si falta) y carga los 3 docentes curados
- * en DynamoDB con `order` 1-3.
+ * Seed: crea tabla teachers (si falta) y carga los docentes semilla
+ * desde `teachers.seed.json` en DynamoDB con `order` incremental.
  * Uso: node seed.js  (lee .env: llaves IAM + region + tabla)
  * Requiere: AWS_ACCESS_KEY_ID + AWS_SECRET_ACCESS_KEY en .env (nunca en git).
+ * NOTA: `teachers.seed.json` es SOLO respaldo semilla para futuras cargas,
+ * nunca fallback en vivo (server.js responde 503 sin DynamoDB).
  */
 require('dotenv').config();
+const fs = require('node:fs');
+const path = require('node:path');
 const { DynamoDBClient, CreateTableCommand, DescribeTableCommand } = require('@aws-sdk/client-dynamodb');
 const { DynamoDBDocumentClient, PutCommand } = require('@aws-sdk/lib-dynamodb');
-const { TEACHERS } = require('./teachers.data');
+
+const SEED_PATH = path.join(__dirname, 'teachers.seed.json');
+const TEACHERS = JSON.parse(fs.readFileSync(SEED_PATH, 'utf8'));
 
 const AWS_REGION = process.env.AWS_REGION || 'us-east-2';
 const TABLE_NAME = process.env.TABLE_NAME || 'teachers';

@@ -59,7 +59,7 @@ function Home() {
         )}
 
         {!ctx.loading && !ctx.error && ctx.isEmpty && (
-          <EmptyState message={isTeachers ? 'Busca un docente para ver su información' : isNaruto ? 'Busca un personaje para ver galería y datos' : undefined} />
+          <EmptyState message={isTeachers ? 'No hay docentes en la nube. Usa Agregar para crear uno.' : isNaruto ? 'Busca un personaje para ver galería y datos' : undefined} />
         )}
 
         {!ctx.loading && !ctx.error && !ctx.isEmpty && (

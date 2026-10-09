@@ -1,20 +1,41 @@
 import React from 'react';
-import { Image, Linking, Pressable, StyleSheet, Text, View } from 'react-native';
+import { Alert, Image, Linking, Pressable, StyleSheet, Text, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useTeachers } from '../context/TeachersContext';
 import { useTheme } from '../context/ThemeContext';
 import { RADIUS } from '../theme/tokens';
+import { TeacherForm } from './TeacherForm';
 
-// Vista detalle del docente: foto LinkedIn (o placeholder), profesion,
-// descripcion de la red social + link al perfil. Boton "Volver" regresa
-// a la lista. Este boton esta FUERA del BottomTabs, como se pidio.
+// Vista detalle del docente + admin CRUD (editar/borrar).
+// En modo edit muestra el formulario; si no, foto, profesion,
+// descripcion + link al perfil. Boton "Volver" regresa a la lista.
 export function TeacherDetailScreen() {
-  const { selected, goBack } = useTeachers();
+  const { selected, goBack, formMode, saving, startEdit, cancelForm, submitForm, removeTeacher } = useTeachers();
   const { colors } = useTheme();
+  if (!selected && formMode !== 'edit') return null;
+
+  if (formMode === 'edit' && selected) {
+    return (
+      <View style={styles.wrap}>
+        <TeacherForm initial={selected} saving={saving} onSubmit={submitForm} onCancel={cancelForm} />
+      </View>
+    );
+  }
   if (!selected) return null;
 
   const openProfile = () => {
     if (selected.profileUrl) Linking.openURL(selected.profileUrl).catch(() => {});
+  };
+
+  const confirmDelete = () => {
+    Alert.alert(
+      'Borrar docente',
+      `¿Borrar a ${selected.name} (#${selected.id})? Esta acción no se puede deshacer.`,
+      [
+        { text: 'Cancelar', style: 'cancel' },
+        { text: 'Borrar', style: 'destructive', onPress: () => removeTeacher(selected.id) },
+      ]
+    );
   };
 
   return (
@@ -52,11 +73,33 @@ export function TeacherDetailScreen() {
         <Ionicons name="arrow-back" size={18} color="#fff" />
         <Text style={styles.backText}>Volver</Text>
       </Pressable>
+
+      <View style={styles.adminRow}>
+        <Pressable
+          style={[styles.adminBtn, { borderColor: colors.primary }]}
+          onPress={() => startEdit(selected)}
+          accessibilityRole="button"
+          accessibilityLabel="Editar docente"
+        >
+          <Ionicons name="create-outline" size={18} color={colors.primary} />
+          <Text style={[styles.adminBtnText, { color: colors.primary }]}>Editar</Text>
+        </Pressable>
+        <Pressable
+          style={[styles.adminBtn, { borderColor: '#B91C1C' }]}
+          onPress={confirmDelete}
+          accessibilityRole="button"
+          accessibilityLabel="Borrar docente"
+        >
+          <Ionicons name="trash-outline" size={18} color="#B91C1C" />
+          <Text style={[styles.adminBtnText, { color: '#B91C1C' }]}>Eliminar</Text>
+        </Pressable>
+      </View>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
+  wrap: { width: '100%' },
   card: { borderRadius: RADIUS.xl, padding: 20, width: '100%', alignItems: 'center', gap: 8 },
   photo: { width: 140, height: 140, borderRadius: 70, backgroundColor: '#eee' },
   name: { fontSize: 20, fontWeight: '800', textAlign: 'center' },
@@ -73,4 +116,10 @@ const styles = StyleSheet.create({
     borderRadius: RADIUS.m, paddingVertical: 12, paddingHorizontal: 20, marginTop: 12, minHeight: 44, alignSelf: 'stretch',
   },
   backText: { color: '#fff', fontWeight: '800', fontSize: 15 },
+  adminRow: { flexDirection: 'row', gap: 10, marginTop: 4, alignSelf: 'stretch' },
+  adminBtn: {
+    flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6,
+    borderWidth: 1, borderRadius: RADIUS.m, paddingVertical: 12, minHeight: 44,
+  },
+  adminBtnText: { fontWeight: '800', fontSize: 14 },
 });
