@@ -1,10 +1,11 @@
-import React from 'react';
-import { Alert, Image, Linking, Pressable, StyleSheet, Text, View } from 'react-native';
+import React, { useState } from 'react';
+import { Image, Linking, Pressable, StyleSheet, Text, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useTeachers } from '../context/TeachersContext';
 import { useTheme } from '../context/ThemeContext';
 import { RADIUS } from '../theme/tokens';
 import { TeacherForm } from './TeacherForm';
+import { ConfirmModal } from './ConfirmModal';
 
 // Vista detalle del docente + admin CRUD (editar/borrar).
 // En modo edit muestra el formulario; si no, foto, profesion,
@@ -12,6 +13,7 @@ import { TeacherForm } from './TeacherForm';
 export function TeacherDetailScreen() {
   const { selected, goBack, formMode, saving, startEdit, cancelForm, submitForm, removeTeacher } = useTeachers();
   const { colors } = useTheme();
+  const [confirmingDelete, setConfirmingDelete] = useState(false);
   if (!selected && formMode !== 'edit') return null;
 
   if (formMode === 'edit' && selected) {
@@ -27,15 +29,12 @@ export function TeacherDetailScreen() {
     if (selected.profileUrl) Linking.openURL(selected.profileUrl).catch(() => {});
   };
 
-  const confirmDelete = () => {
-    Alert.alert(
-      'Borrar docente',
-      `¿Borrar a ${selected.name} (#${selected.id})? Esta acción no se puede deshacer.`,
-      [
-        { text: 'Cancelar', style: 'cancel' },
-        { text: 'Borrar', style: 'destructive', onPress: () => removeTeacher(selected.id) },
-      ]
-    );
+  const confirmDelete = () => setConfirmingDelete(true);
+
+  const doDelete = async () => {
+    if (!selected) return;
+    await removeTeacher(selected.id);
+    setConfirmingDelete(false);
   };
 
   return (
@@ -85,15 +84,25 @@ export function TeacherDetailScreen() {
           <Text style={[styles.adminBtnText, { color: colors.primary }]}>Editar</Text>
         </Pressable>
         <Pressable
-          style={[styles.adminBtn, { borderColor: '#B91C1C' }]}
+          style={[styles.adminBtn, { borderColor: '#B91C1C', opacity: saving ? 0.7 : 1 }]}
           onPress={confirmDelete}
+          disabled={saving}
           accessibilityRole="button"
           accessibilityLabel="Borrar docente"
         >
           <Ionicons name="trash-outline" size={18} color="#B91C1C" />
-          <Text style={[styles.adminBtnText, { color: '#B91C1C' }]}>Eliminar</Text>
+          <Text style={[styles.adminBtnText, { color: '#B91C1C' }]}>{saving ? 'Borrando...' : 'Eliminar'}</Text>
         </Pressable>
       </View>
+      <ConfirmModal
+        visible={confirmingDelete}
+        title="Borrar docente"
+        message={`¿Borrar a ${selected.name} (#${selected.id})? Esta acción no se puede deshacer.`}
+        confirmLabel="Borrar"
+        confirming={saving}
+        onConfirm={doDelete}
+        onCancel={() => { if (!saving) setConfirmingDelete(false); }}
+      />
     </View>
   );
 }

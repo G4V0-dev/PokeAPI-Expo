@@ -1,10 +1,11 @@
-import React, { useEffect } from 'react';
-import { Alert, Image, Pressable, StyleSheet, Text, View } from 'react-native';
+import React, { useEffect, useState } from 'react';
+import { Image, Pressable, StyleSheet, Text, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useTeachers } from '../context/TeachersContext';
 import { useTheme } from '../context/ThemeContext';
 import { RADIUS } from '../theme/tokens';
 import { TeacherForm } from './TeacherForm';
+import { ConfirmModal } from './ConfirmModal';
 
 // Pantalla SIMPLE de docentes: lista + admin CRUD (crear/borrar).
 // Editar vive en el detalle. Cada tarjeta tiene BOTON "Ver informacion"
@@ -12,6 +13,9 @@ import { TeacherForm } from './TeacherForm';
 export function TeachersScreen() {
   const { list, fetchList, formMode, saving, startCreate, cancelForm, submitForm, removeTeacher } = useTeachers();
   const { colors } = useTheme();
+  // Docente pendiente de borrado (solo confirmacion local; el DELETE real
+  // lo ejecuta removeTeacher contra el micro en Render).
+  const [pendingDelete, setPendingDelete] = useState(null);
 
   useEffect(() => {
     if (list.length === 0 && !formMode) fetchList('');
@@ -26,15 +30,10 @@ export function TeachersScreen() {
     );
   }
 
-  const confirmDelete = (t) => {
-    Alert.alert(
-      'Borrar docente',
-      `¿Borrar a ${t.name} (#${t.id})? Esta acción no se puede deshacer.`,
-      [
-        { text: 'Cancelar', style: 'cancel' },
-        { text: 'Borrar', style: 'destructive', onPress: () => removeTeacher(t.id) },
-      ]
-    );
+  const doDelete = async () => {
+    if (!pendingDelete) return;
+    await removeTeacher(pendingDelete.id);
+    setPendingDelete(null);
   };
 
   return (
@@ -52,13 +51,22 @@ export function TeachersScreen() {
         </Pressable>
       </View>
       {list.map((t) => (
-        <TeacherCard key={t.id} teacher={t} onDelete={() => confirmDelete(t)} />
+        <TeacherCard key={t.id} teacher={t} onDelete={() => setPendingDelete(t)} deleting={saving && pendingDelete?.id === t.id} />
       ))}
+      <ConfirmModal
+        visible={!!pendingDelete}
+        title="Borrar docente"
+        message={pendingDelete ? `¿Borrar a ${pendingDelete.name} (#${pendingDelete.id})? Esta acción no se puede deshacer.` : ''}
+        confirmLabel="Borrar"
+        confirming={saving}
+        onConfirm={doDelete}
+        onCancel={() => { if (!saving) setPendingDelete(null); }}
+      />
     </View>
   );
 }
 
-function TeacherCard({ teacher, onDelete }) {
+function TeacherCard({ teacher, onDelete, deleting }) {
   const { openDetail } = useTeachers();
   const { colors } = useTheme();
   return (
@@ -84,13 +92,14 @@ function TeacherCard({ teacher, onDelete }) {
           <Text style={styles.btnText}>Ver información</Text>
         </Pressable>
         <Pressable
-          style={[styles.deleteBtn, { borderColor: colors.border }]}
+          style={[styles.deleteBtn, { borderColor: colors.border, opacity: deleting ? 0.7 : 1 }]}
           onPress={onDelete}
+          disabled={deleting}
           accessibilityRole="button"
           accessibilityLabel={`Borrar a ${teacher.name}`}
         >
           <Ionicons name="trash-outline" size={16} color="#B91C1C" />
-          <Text style={styles.deleteText}>Borrar</Text>
+          <Text style={styles.deleteText}>{deleting ? 'Borrando...' : 'Borrar'}</Text>
         </Pressable>
       </View>
     </View>

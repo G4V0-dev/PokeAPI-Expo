@@ -122,6 +122,7 @@ function openApiSpec(req) {
           responses: {
             201: { description: 'Detalle creado {id, name, profession, headline, description, photo, profileUrl, area, order}' },
             400: { description: 'Falta name o profession / JSON invalido' },
+            403: { description: 'Rol IAM sin permiso de escritura (PutItem).' },
             503: { description: NO_DB_MESSAGE },
           },
         },
@@ -156,6 +157,7 @@ function openApiSpec(req) {
             200: { description: 'Detalle reemplazado' },
             400: { description: 'ID no numerico / falta name o profession' },
             404: { description: 'No existe ese ID' },
+            403: { description: 'Rol IAM sin permiso de escritura (PutItem).' },
             503: { description: NO_DB_MESSAGE },
           },
         },
@@ -178,6 +180,7 @@ function openApiSpec(req) {
             200: { description: 'Detalle actualizado' },
             400: { description: 'ID no numerico / PATCH sin campos' },
             404: { description: 'No existe ese ID' },
+            403: { description: 'Rol IAM sin permiso de escritura (PutItem).' },
             503: { description: NO_DB_MESSAGE },
           },
         },
@@ -188,6 +191,7 @@ function openApiSpec(req) {
             200: { description: 'Detalle borrado' },
             400: { description: 'ID no numerico' },
             404: { description: 'No existe ese ID' },
+            403: { description: 'Rol IAM sin permiso de borrado (DeleteItem).' },
             503: { description: NO_DB_MESSAGE },
           },
         },
@@ -244,6 +248,20 @@ function requireRepo(res) {
   if (repo) return true;
   sendJson(res, 503, { error: NO_DB_MESSAGE, detail: repoError || 'DynamoDB no configurado' });
   return false;
+}
+
+// Errores de escritura: un 403 claro cuando IAM niega la accion
+// (ej. falta dynamodb:DeleteItem), en vez del 500 generico.
+function sendWriteError(res, e) {
+  const msg = String((e && e.message) || '');
+  if (/not authorized|AccessDenied|is not authorized/i.test(msg)) {
+    sendJson(res, 403, {
+      error: 'La nube denegó la escritura: el rol IAM no tiene permiso sobre la tabla teachers (revisa DeleteItem/PutItem).',
+      detail: msg,
+    });
+    return;
+  }
+  sendJson(res, (e && e.status) || 500, { error: msg || 'Error interno' });
 }
 
 function readBody(req, limit = 1024 * 1024) {
@@ -326,7 +344,7 @@ const server = http.createServer(async (req, res) => {
           const created = await repo.createTeacher(body);
           sendJson(res, 201, created);
         } catch (e) {
-          sendJson(res, e.status || 500, { error: e.message || 'Error interno' });
+          sendWriteError(res, e);
         }
         return;
       }
@@ -367,18 +385,22 @@ const server = http.createServer(async (req, res) => {
           }
           sendJson(res, 200, updated);
         } catch (e) {
-          sendJson(res, e.status || 500, { error: e.message || 'Error interno' });
+          sendWriteError(res, e);
         }
         return;
       }
       if (req.method === 'DELETE') {
         if (!requireRepo(res)) return;
-        const deleted = await repo.deleteTeacher(query);
-        if (!deleted) {
-          sendJson(res, 404, { error: 'Docente no encontrado en la nube.' });
-          return;
+        try {
+          const deleted = await repo.deleteTeacher(query);
+          if (!deleted) {
+            sendJson(res, 404, { error: 'Docente no encontrado en la nube.' });
+            return;
+          }
+          sendJson(res, 200, deleted);
+        } catch (e) {
+          sendWriteError(res, e);
         }
-        sendJson(res, 200, deleted);
         return;
       }
       sendJson(res, 405, { error: 'Metodo no permitido. Usa GET, PUT, PATCH o DELETE.' });

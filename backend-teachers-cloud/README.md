@@ -25,6 +25,8 @@ para `npm run seed`. Sin llaves AWS o sin tabla, el micro responde
 | GET | `/docs` | Documentación mínima (HTML sin dependencias) |
 
 Escrituras **abiertas sin auth** por decisión del proyecto (uso universitario).
+Requieren permiso IAM en la tabla (`PutItem` para POST/PUT/PATCH,
+`DeleteItem` para DELETE); sin él responden `403` con el detalle de AWS.
 
 ```bash
 npm install
