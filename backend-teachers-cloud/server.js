@@ -16,8 +16,8 @@
  *   PUT    /teachers/:id      -> reemplazo total por id numerico (body JSON)
  *   PATCH  /teachers/:id      -> actualizacion parcial por id numerico (body JSON)
  *   DELETE /teachers/:id      -> borra por id numerico
- *   GET    /openapi.json      -> spec Swagger JSON
- *   GET    /docs              -> documentacion Swagger minima (HTML sin dependencias)
+ *   GET    /openapi.json (+ /api-docs.json) -> spec Swagger JSON (OpenAPI 3.0)
+ *   GET    /docs (+ /api-docs)  -> Swagger UI interactivo por CDN (paridad con poke-cloud /api-docs)
  *
  * Escrituras ABIERTAS sin auth por decision del proyecto (uso universitario).
  */
@@ -59,11 +59,22 @@ async function initRepo() {
   }
 }
 
-// --- Spec Swagger (OpenAPI 3.0) ---
+// --- Spec Swagger (OpenAPI 3.0) — nivel poke-cloud (Swagger UI interactivo) ---
 function baseUrl(req) {
   if (process.env.RENDER_EXTERNAL_URL) return process.env.RENDER_EXTERNAL_URL;
   const host = req.headers.host || `localhost:${PORT}`;
   return `http://${host}`;
+}
+
+function serversFor(req) {
+  const base = baseUrl(req);
+  if (process.env.RENDER_EXTERNAL_URL) {
+    return [
+      { url: base, description: 'Producción (Render)' },
+      { url: `http://localhost:${PORT}`, description: 'Local' },
+    ];
+  }
+  return [{ url: base, description: 'Local' }];
 }
 
 function teacherInputSchema() {
@@ -72,35 +83,149 @@ function teacherInputSchema() {
     required: ['name', 'profession'],
     properties: {
       name: { type: 'string', example: 'Ada Lovelace' },
-      profession: { type: 'string', example: 'Docente de Programacion' },
-      headline: { type: 'string', example: 'Pionera de la computacion' },
+      profession: { type: 'string', example: 'Docente de Programación' },
+      headline: { type: 'string', example: 'Pionera de la computación' },
       description: { type: 'string', example: 'Docente e investigadora...' },
-      photo: { type: 'string', example: 'https://...' },
-      profileUrl: { type: 'string', example: 'https://www.linkedin.com/in/...' },
-      area: { type: 'string', example: 'Ingenieria de Software' },
+      photo: { type: 'string', format: 'uri', example: 'https://ui-avatars.com/api/?name=Ada+Lovelace&background=D64545&color=fff' },
+      profileUrl: { type: 'string', format: 'uri', example: 'https://www.linkedin.com/in/ada-lovelace/' },
+      area: { type: 'string', example: 'Ingeniería de Software' },
       aliases: { type: 'array', items: { type: 'string' }, example: ['ada', 'lovelace'] },
     },
   };
 }
 
+function teacherSummarySchema() {
+  return {
+    type: 'object',
+    required: ['id', 'name', 'profession'],
+    properties: {
+      id: { type: 'integer', example: 2 },
+      name: { type: 'string', example: 'Leonardo Valenzuela Rodriguez' },
+      profession: { type: 'string', example: 'Backend Engineer (.NET y Azure) | Docente universitario' },
+      headline: { type: 'string', example: 'Backend Engineer con experiencia en .NET, Azure y microservicios.' },
+      photo: { type: 'string', format: 'uri', example: 'https://ui-avatars.com/api/?name=Leonardo+Valenzuela+Rodriguez&background=D64545&color=fff&size=512' },
+      profileUrl: { type: 'string', format: 'uri', example: 'https://www.linkedin.com/in/leonardo-valenzuela-rodriguez/' },
+    },
+  };
+}
+
+function teacherDetailSchema() {
+  return {
+    type: 'object',
+    required: ['id', 'name', 'profession'],
+    properties: {
+      id: { type: 'integer', example: 1 },
+      name: { type: 'string', example: 'Elfar Didier Morantes Sanchez' },
+      profession: { type: 'string', example: 'Ingeniero Electrónico · Docente FullStack' },
+      headline: { type: 'string', example: 'Ingeniero Electrónico, Especialista en Ingeniería de Software.' },
+      description: { type: 'string', example: 'Desarrollador FullStack con énfasis en backend... Docente universitario.' },
+      photo: { type: 'string', format: 'uri', example: 'https://unavatar.io/linkedin/elfar-didier-morantes-s%C3%A1nchez' },
+      profileUrl: { type: 'string', format: 'uri', example: 'https://www.linkedin.com/in/elfar-didier-morantes-s%C3%A1nchez/' },
+      area: { type: 'string', nullable: true, example: 'Ingeniería y Tecnologías de la Información' },
+      order: { type: 'integer', nullable: true, example: 1 },
+    },
+  };
+}
+
+function errorSchema() {
+  return {
+    type: 'object',
+    required: ['error'],
+    properties: {
+      error: { type: 'string', example: 'Docente no encontrado en la nube.' },
+      detail: { type: 'string', example: 'Detalle técnico opcional (DynamoDB / validación).' },
+    },
+  };
+}
+
 function openApiSpec(req) {
-  const base = baseUrl(req);
+  const TeacherInput = teacherInputSchema();
+  const TeacherSummary = teacherSummarySchema();
+  const TeacherDetail = teacherDetailSchema();
+  const Error = errorSchema();
   return {
     openapi: '3.0.0',
     info: {
       title: 'Teachers Cloud — microservicio Docentes UNINPAHU (DynamoDB + CRUD)',
-      version: '2.0.0',
+      version: '2.1.0',
       description:
-        'Docentes servidos SOLO desde DynamoDB (tabla teachers). Sin fallback en memoria: sin BD responde 503. Escrituras abiertas sin auth (uso universitario). Semilla de respaldo en teachers.seed.json + `npm run seed`.',
+        'Docentes UNINPAHU servidos **SOLO desde DynamoDB** (tabla `teachers`, región `us-east-2`).\n\n' +
+        '- **Sin fallback en memoria:** sin llaves AWS o sin tabla responde `503`. La semilla `teachers.seed.json` es SOLO respaldo para `npm run seed`.\n' +
+        '- **Escrituras abiertas sin auth** (uso universitario). Requieren permiso IAM (`PutItem` para POST/PUT/PATCH, `DeleteItem` para DELETE); sin él responden `403`.\n' +
+        '- **Búsqueda flexible:** por ID numérico (`/teachers/2`), nombre exacto, alias (`/teachers/elfar`) o prefijo/contiene (`/teachers/leonardo`, `?query=leonardo`).\n' +
+        '- **Docs:** esta página (`/docs`, alias `/api-docs`) + spec JSON (`/openapi.json`, alias `/api-docs.json`).',
+      contact: { name: 'UNINPAHU — Facultad de Ingeniería y TI' },
     },
-    servers: [{ url: base, description: process.env.RENDER_EXTERNAL_URL ? 'Render' : 'Local' }],
+    servers: serversFor(req),
+    tags: [
+      { name: 'Salud', description: 'Estado del servicio y de DynamoDB.' },
+      { name: 'Docentes', description: 'Lectura y CRUD de docentes. Lecturas por ID, nombre o alias.' },
+      { name: 'Docs', description: 'Spec OpenAPI y página interactiva.' },
+    ],
     paths: {
+      '/': {
+        get: {
+          tags: ['Salud'],
+          summary: 'Info del servicio',
+          operationId: 'serviceInfo',
+          responses: {
+            200: {
+              description: 'Info + modo de persistencia y rutas de docs.',
+              content: {
+                'application/json': {
+                  schema: {
+                    type: 'object',
+                    properties: {
+                      service: { type: 'string', example: 'teachers-cloud' },
+                      table: { type: 'string', example: 'teachers' },
+                      region: { type: 'string', example: 'us-east-2' },
+                      mode: { type: 'string', example: 'dynamodb' },
+                      docs: { type: 'string', example: '/docs' },
+                      spec: { type: 'string', example: '/openapi.json' },
+                    },
+                  },
+                },
+              },
+            },
+          },
+        },
+      },
       '/health': {
-        get: { summary: 'Salud del microservicio (+ DB)', responses: { 200: { description: 'OK' }, 503: { description: 'Sin acceso a DynamoDB' } } },
+        get: {
+          tags: ['Salud'],
+          summary: 'Salud del microservicio (+ DynamoDB)',
+          description: 'Hace `Scan Limit=1` sobre la tabla. Sin BD responde `503` (nunca sirve semilla en vivo).',
+          operationId: 'healthCheck',
+          responses: {
+            200: {
+              description: 'OK — conectado a DynamoDB.',
+              content: {
+                'application/json': {
+                  schema: {
+                    type: 'object',
+                    properties: {
+                      ok: { type: 'boolean', example: true },
+                      db: { type: 'boolean', example: true },
+                      mode: { type: 'string', example: 'dynamodb' },
+                      count: { type: 'integer', nullable: true, example: 1 },
+                    },
+                  },
+                },
+              },
+            },
+            503: {
+              description: NO_DB_MESSAGE,
+              content: { 'application/json': { schema: Error } },
+            },
+          },
+        },
       },
       '/teachers': {
         get: {
+          tags: ['Docentes'],
           summary: 'Lista docentes (resumen)',
+          description: 'Devuelve `[{ id, name, profession, headline, photo, profileUrl }]` ordenados por `order`. Con `?query=` filtra por nombre, profesión o alias (case-insensitive).',
+          operationId: 'listTeachers',
           parameters: [
             {
               in: 'query',
@@ -108,117 +233,221 @@ function openApiSpec(req) {
               required: false,
               schema: { type: 'string' },
               example: 'leonardo',
-              description: 'Filtra por nombre o profesion (opcional).',
+              description: 'Filtra por nombre, profesión o alias. Vacío = trae todos.',
             },
           ],
           responses: {
-            200: { description: 'Arreglo {id, name, profession, headline, photo, profileUrl}' },
-            503: { description: NO_DB_MESSAGE },
+            200: {
+              description: 'Arreglo resumen.',
+              content: { 'application/json': { schema: { type: 'array', items: TeacherSummary } } },
+            },
+            503: {
+              description: NO_DB_MESSAGE,
+              content: { 'application/json': { schema: Error } },
+            },
           },
         },
         post: {
+          tags: ['Docentes'],
           summary: 'Crea un docente (id = max+1)',
-          requestBody: { required: true, content: { 'application/json': { schema: teacherInputSchema() } } },
+          description: 'Body JSON plano `{ name, profession, ... }` (también acepta `{ data: {...} }`). Exige `name` + `profession`. Genera `id = max(id)+1`, `order = max(order)+1`, `name_lower` y `seed_key` (slug) derivados.',
+          operationId: 'createTeacher',
+          requestBody: {
+            required: true,
+            content: {
+              'application/json': {
+                schema: TeacherInput,
+                examples: {
+                  minimo: {
+                    summary: 'Mínimo válido',
+                    value: { name: 'Ada Lovelace', profession: 'Docente de Programación' },
+                  },
+                  completo: {
+                    summary: 'Completo',
+                    value: {
+                      name: 'Ada Lovelace',
+                      profession: 'Docente de Programación',
+                      headline: 'Pionera de la computación',
+                      description: 'Docente e investigadora...',
+                      photo: 'https://ui-avatars.com/api/?name=Ada+Lovelace&background=D64545&color=fff',
+                      profileUrl: 'https://www.linkedin.com/in/ada-lovelace/',
+                      area: 'Ingeniería de Software',
+                      aliases: ['ada', 'lovelace'],
+                    },
+                  },
+                },
+              },
+            },
+          },
           responses: {
-            201: { description: 'Detalle creado {id, name, profession, headline, description, photo, profileUrl, area, order}' },
-            400: { description: 'Falta name o profession / JSON invalido' },
-            403: { description: 'Rol IAM sin permiso de escritura (PutItem).' },
-            503: { description: NO_DB_MESSAGE },
+            201: {
+              description: 'Detalle creado.',
+              content: { 'application/json': { schema: TeacherDetail } },
+            },
+            400: { description: 'Falta name o profession / JSON inválido / body > 1MB.', content: { 'application/json': { schema: Error } } },
+            403: { description: 'Rol IAM sin permiso de escritura (PutItem).', content: { 'application/json': { schema: Error } } },
+            503: { description: NO_DB_MESSAGE, content: { 'application/json': { schema: Error } } },
           },
         },
       },
       '/teachers/{query}': {
         get: {
+          tags: ['Docentes'],
           summary: 'Docente por ID o nombre',
+          description: 'Path param flexible: ID numérico (`2`), nombre exacto (`Leonardo Valenzuela Rodriguez`), alias (`elfar`), prefijo (`leo`) o contiene (`valen`). Prioridad: ID → exacto/alias → startsWith → includes.',
+          operationId: 'getTeacher',
           parameters: [
             {
               in: 'path',
               name: 'query',
               required: true,
               schema: { type: 'string' },
-              example: '2',
-              description: 'ID numerico o nombre/alias.',
+              examples: {
+                porId: { summary: 'Por ID', value: '2' },
+                porAlias: { summary: 'Por alias', value: 'elfar' },
+                porNombre: { summary: 'Por nombre', value: 'leonardo' },
+              },
+              description: 'ID numérico o nombre/alias.',
             },
           ],
           responses: {
-            200: { description: 'Detalle {id, name, profession, headline, description, photo, profileUrl, area, order}' },
-            400: { description: 'Falta query' },
-            404: { description: 'No existe' },
-            503: { description: NO_DB_MESSAGE },
+            200: {
+              description: 'Detalle del docente.',
+              content: { 'application/json': { schema: TeacherDetail } },
+            },
+            400: { description: 'Falta query.', content: { 'application/json': { schema: Error } } },
+            404: { description: 'No existe en la nube.', content: { 'application/json': { schema: Error } } },
+            503: { description: NO_DB_MESSAGE, content: { 'application/json': { schema: Error } } },
           },
         },
       },
       '/teachers/{id}': {
         put: {
-          summary: 'Reemplazo total por ID numerico',
-          parameters: [{ in: 'path', name: 'id', required: true, schema: { type: 'integer' }, example: 4 }],
-          requestBody: { required: true, content: { 'application/json': { schema: teacherInputSchema() } } },
+          tags: ['Docentes'],
+          summary: 'Reemplazo total por ID numérico',
+          description: 'PUT reemplaza el item (conserva `order`). Exige `name` + `profession`. PUT/PATCH/DELETE SOLO por ID numérico (`/teachers/abc` → `400`).',
+          operationId: 'replaceTeacher',
+          parameters: [{ in: 'path', name: 'id', required: true, schema: { type: 'integer' }, example: 4, description: 'ID numérico.' }],
+          requestBody: {
+            required: true,
+            content: {
+              'application/json': {
+                schema: TeacherInput,
+                examples: {
+                  reemplazo: {
+                    summary: 'Reemplazo total',
+                    value: { name: 'Ada Lovelace', profession: 'Docente de Programación', headline: 'Pionera', area: 'Ingeniería de Software' },
+                  },
+                },
+              },
+            },
+          },
           responses: {
-            200: { description: 'Detalle reemplazado' },
-            400: { description: 'ID no numerico / falta name o profession' },
-            404: { description: 'No existe ese ID' },
-            403: { description: 'Rol IAM sin permiso de escritura (PutItem).' },
-            503: { description: NO_DB_MESSAGE },
+            200: { description: 'Detalle reemplazado.', content: { 'application/json': { schema: TeacherDetail } } },
+            400: { description: 'ID no numérico / falta name o profession.', content: { 'application/json': { schema: Error } } },
+            404: { description: 'No existe ese ID.', content: { 'application/json': { schema: Error } } },
+            403: { description: 'Rol IAM sin permiso de escritura (PutItem).', content: { 'application/json': { schema: Error } } },
+            503: { description: NO_DB_MESSAGE, content: { 'application/json': { schema: Error } } },
           },
         },
         patch: {
-          summary: 'Actualizacion parcial por ID numerico',
-          parameters: [{ in: 'path', name: 'id', required: true, schema: { type: 'integer' }, example: 4 }],
+          tags: ['Docentes'],
+          summary: 'Actualización parcial por ID numérico',
+          description: 'PATCH mezcla sobre el item existente. Exige al menos un campo editable; `name`/`profession` presentes no pueden quedar vacíos.',
+          operationId: 'patchTeacher',
+          parameters: [{ in: 'path', name: 'id', required: true, schema: { type: 'integer' }, example: 4, description: 'ID numérico.' }],
           requestBody: {
             required: true,
             content: {
               'application/json': {
                 schema: {
                   type: 'object',
-                  properties: teacherInputSchema().properties,
+                  properties: TeacherInput.properties,
                   description: 'Al menos un campo editable.',
+                  minProperties: 1,
+                },
+                examples: {
+                  area: { summary: 'Cambiar área', value: { area: 'Ingeniería de Software' } },
+                  foto: { summary: 'Fijar foto definitiva', value: { photo: 'https://uninpahu.edu.co/wp-content/uploads/foto.jpg' } },
                 },
               },
             },
           },
           responses: {
-            200: { description: 'Detalle actualizado' },
-            400: { description: 'ID no numerico / PATCH sin campos' },
-            404: { description: 'No existe ese ID' },
-            403: { description: 'Rol IAM sin permiso de escritura (PutItem).' },
-            503: { description: NO_DB_MESSAGE },
+            200: { description: 'Detalle actualizado.', content: { 'application/json': { schema: TeacherDetail } } },
+            400: { description: 'ID no numérico / PATCH sin campos / campo vacío.', content: { 'application/json': { schema: Error } } },
+            404: { description: 'No existe ese ID.', content: { 'application/json': { schema: Error } } },
+            403: { description: 'Rol IAM sin permiso de escritura (PutItem).', content: { 'application/json': { schema: Error } } },
+            503: { description: NO_DB_MESSAGE, content: { 'application/json': { schema: Error } } },
           },
         },
         delete: {
-          summary: 'Borra por ID numerico',
-          parameters: [{ in: 'path', name: 'id', required: true, schema: { type: 'integer' }, example: 4 }],
+          tags: ['Docentes'],
+          summary: 'Borra por ID numérico',
+          description: 'Devuelve el detalle borrado.',
+          operationId: 'deleteTeacher',
+          parameters: [{ in: 'path', name: 'id', required: true, schema: { type: 'integer' }, example: 4, description: 'ID numérico.' }],
           responses: {
-            200: { description: 'Detalle borrado' },
-            400: { description: 'ID no numerico' },
-            404: { description: 'No existe ese ID' },
-            403: { description: 'Rol IAM sin permiso de borrado (DeleteItem).' },
-            503: { description: NO_DB_MESSAGE },
+            200: { description: 'Detalle borrado.', content: { 'application/json': { schema: TeacherDetail } } },
+            400: { description: 'ID no numérico.', content: { 'application/json': { schema: Error } } },
+            404: { description: 'No existe ese ID.', content: { 'application/json': { schema: Error } } },
+            403: { description: 'Rol IAM sin permiso de borrado (DeleteItem).', content: { 'application/json': { schema: Error } } },
+            503: { description: NO_DB_MESSAGE, content: { 'application/json': { schema: Error } } },
           },
         },
+      },
+      '/openapi.json': {
+        get: {
+          tags: ['Docs'],
+          summary: 'Spec OpenAPI JSON',
+          operationId: 'openApiJson',
+          responses: { 200: { description: 'Spec OpenAPI 3.0.' } },
+        },
+      },
+    },
+    components: {
+      schemas: {
+        TeacherSummary,
+        TeacherDetail,
+        TeacherInput,
+        TeacherPatch: {
+          type: 'object',
+          properties: TeacherInput.properties,
+          description: 'Al menos un campo editable.',
+          minProperties: 1,
+        },
+        Error,
       },
     },
   };
 }
 
+// --- Docs interactivas estilo poke-cloud (/api-docs): Swagger UI por CDN, SIN Express ---
+// Se mantiene Node nativo (node:http): /docs sirve este HTML que carga
+// swagger-ui-dist desde unpkg y apunta a /openapi.json. Sin dependencias nuevas.
 function docsHtml() {
   return `<!doctype html><html lang="es"><head><meta charset="utf-8"/>
 <meta name="viewport" content="width=device-width,initial-scale=1"/>
-<title>Teachers Cloud — Docs</title>
-<style>body{font-family:system-ui,Arial,sans-serif;max-width:760px;margin:32px auto;padding:0 16px;color:#222}
-code{background:#f4f4f4;padding:2px 6px;border-radius:6px}a{color:#D64545}
-.card{border:1px solid #eee;border-radius:12px;padding:16px;margin:12px 0}
-.warn{background:#FFF7ED;border:1px solid #FDBA74;border-radius:12px;padding:12px 16px;margin:12px 0}</style></head><body>
-<h1>Teachers Cloud — Docentes UNINPAHU (CRUD)</h1>
-<p>Microservicio Node nativo (sin Express) + DynamoDB. Spec: <a href="/openapi.json">/openapi.json</a></p>
-<div class="warn"><b>Sin fallback:</b> sin llaves AWS/tabla responde <code>503 ${NO_DB_MESSAGE}</code>. La semilla <code>teachers.seed.json</code> es solo respaldo para <code>npm run seed</code>.</div>
-<div class="card"><b>GET /health</b><br/><code>curl /health</code></div>
-<div class="card"><b>GET /teachers</b> — lista resumen<br/><code>curl /teachers</code><br/><code>curl /teachers?query=leonardo</code> (query param, sin body)</div>
-<div class="card"><b>GET /teachers/:query</b> — detalle por path param<br/><code>curl /teachers/2</code><br/><code>curl /teachers/elfar</code></div>
-<div class="card"><b>POST /teachers</b> — crear (body JSON, exige name+profession)<br/><code>curl -X POST /teachers -H "Content-Type: application/json" -d '{"name":"Ada Lovelace","profession":"Docente"}'</code></div>
-<div class="card"><b>PUT /teachers/:id</b> — reemplazo total (id numerico)<br/><code>curl -X PUT /teachers/4 -H "Content-Type: application/json" -d '{"name":"Ada Lovelace","profession":"Docente de Programacion"}'</code></div>
-<div class="card"><b>PATCH /teachers/:id</b> — parcial<br/><code>curl -X PATCH /teachers/4 -H "Content-Type: application/json" -d '{"area":"Ingenieria"}'</code></div>
-<div class="card"><b>DELETE /teachers/:id</b> — borra<br/><code>curl -X DELETE /teachers/4</code></div>
-<p>Escrituras abiertas sin auth (uso universitario).</p>
+<title>Teachers Cloud — Docs (Swagger UI)</title>
+<link rel="stylesheet" href="https://unpkg.com/swagger-ui-dist@5.17.14/swagger-ui.css"/>
+<style>
+body{margin:0;font-family:system-ui,-apple-system,"Segoe UI",Roboto,Arial,sans-serif;background:#fafafa;color:#222}
+.topbar-custom{background:#D64545;color:#fff;padding:14px 20px}
+.topbar-custom h1{margin:0;font-size:18px}
+.topbar-custom p{margin:4px 0 0;font-size:13px;opacity:.95}
+.topbar-custom a{color:#fff;font-weight:600}
+.topbar-custom code{background:rgba(255,255,255,.2);padding:1px 6px;border-radius:6px}
+.swagger-ui .topbar{display:none}
+.hint{max-width:960px;margin:12px auto;padding:10px 16px;font-size:13px;background:#FFF7ED;border:1px solid #FDBA74;border-radius:10px;color:#7C2D12}
+#swagger-ui{max-width:960px;margin:0 auto;padding-bottom:40px}
+</style></head><body>
+<div class="topbar-custom"><h1>Teachers Cloud — Docentes UNINPAHU (CRUD + DynamoDB)</h1>
+<p>Interactiva como <b>poke-cloud /api-docs</b> · Spec: <a href="/openapi.json">/openapi.json</a> · Alias: <code>/api-docs</code> / <code>/api-docs.json</code> · Sin fallback: sin DynamoDB responde <code>503</code> · Escrituras abiertas sin auth (uso universitario).</p></div>
+<div class="hint"><b>Cómo probar:</b> expande <code>GET /teachers</code> → <i>Try it out</i> → <i>Execute</i>. Detalle por ID (<code>/teachers/2</code>) o alias (<code>/teachers/elfar</code>). Para crear: <code>POST /teachers</code> con <code>{"name":"Ada Lovelace","profession":"Docente"}</code>. PUT/PATCH/DELETE solo por ID numérico.</div>
+<div id="swagger-ui"></div>
+<script src="https://unpkg.com/swagger-ui-dist@5.17.14/swagger-ui-bundle.js"></script>
+<script src="https://unpkg.com/swagger-ui-dist@5.17.14/swagger-ui-standalone-preset.js"></script>
+<script>window.onload = function(){ SwaggerUIBundle({ url: "./openapi.json", dom_id: "#swagger-ui", deepLinking: true, presets: [SwaggerUIBundle.presets.apis, SwaggerUIStandalonePreset], layout: "StandaloneLayout", tryItOutEnabled: true }); };</script>
 </body></html>`;
 }
 
@@ -406,11 +635,11 @@ const server = http.createServer(async (req, res) => {
       sendJson(res, 405, { error: 'Metodo no permitido. Usa GET, PUT, PATCH o DELETE.' });
       return;
     }
-    if (path === '/openapi.json') {
+    if (path === '/openapi.json' || path === '/api-docs.json') {
       sendJson(res, 200, openApiSpec(req));
       return;
     }
-    if (path === '/docs') {
+    if (path === '/docs' || path === '/api-docs') {
       sendHtml(res, docsHtml());
       return;
     }

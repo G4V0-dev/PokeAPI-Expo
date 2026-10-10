@@ -21,8 +21,8 @@ para `npm run seed`. Sin llaves AWS o sin tabla, el micro responde
 | PUT | `/teachers/:id` | Reemplazo total por ID numérico (body JSON) |
 | PATCH | `/teachers/:id` | Parcial por ID numérico (body JSON, ≥1 campo) |
 | DELETE | `/teachers/:id` | Borra por ID numérico |
-| GET | `/openapi.json` | Spec Swagger JSON (CRUD documentado) |
-| GET | `/docs` | Documentación mínima (HTML sin dependencias) |
+| GET | `/openapi.json` (+ `/api-docs.json`) | Spec OpenAPI 3.0 (schemas + ejemplos) |
+| GET | `/docs` (+ `/api-docs`) | Swagger UI interactivo por CDN (paridad con poke-cloud `/api-docs`, sin Express) |
 
 Escrituras **abiertas sin auth** por decisión del proyecto (uso universitario).
 Requieren permiso IAM en la tabla (`PutItem` para POST/PUT/PATCH,
