@@ -272,20 +272,28 @@ export function TeachersProvider({ children }) {
         setPullMessage(
           'Hay cambios en la nube que chocan con pendientes sin subir: elige qué versión conservar.'
         );
+        // Aún con conflicto, refrescar lista para mostrar estado actual.
+        const all = await getCachedTeachers().catch(() => r.cloudList);
+        const temps = (all || []).filter((t) => isTempId(t.id));
+        setList([...temps, ...r.cloudList]);
       } else if (r.newIds.length > 0 || r.updatedIds.length > 0 || r.deletedIds.length > 0) {
         const parts = [];
         if (r.newIds.length > 0) parts.push(`${r.newIds.length} nuevo(s)`);
         if (r.updatedIds.length > 0) parts.push(`${r.updatedIds.length} actualizado(s)`);
         if (r.deletedIds.length > 0) parts.push(`${r.deletedIds.length} eliminado(s)`);
         setPullMessage(`Nube sincronizada: ${parts.join(', ')}.`);
-      } else {
-        setPullMessage('Nube sin cambios.');
-      }
-      // Refrescar lista solo si el usuario no está filtrando.
-      if (!String(queryRef.current || '').trim()) {
+        // Refrescar lista SIEMPRE que haya modificaciones (aunque haya query activa).
         const all = await getCachedTeachers().catch(() => r.cloudList);
         const temps = (all || []).filter((t) => isTempId(t.id));
         setList([...temps, ...r.cloudList]);
+      } else {
+        setPullMessage('Nube sin cambios.');
+        // Refrescar lista solo si el usuario no está filtrando, si no hay modificaciones.
+        if (!String(queryRef.current || '').trim()) {
+          const all = await getCachedTeachers().catch(() => r.cloudList);
+          const temps = (all || []).filter((t) => isTempId(t.id));
+          setList([...temps, ...r.cloudList]);
+        }
       }
       refreshPending();
       return r;
