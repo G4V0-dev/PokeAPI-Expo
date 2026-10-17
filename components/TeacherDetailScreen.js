@@ -11,7 +11,7 @@ import { ConfirmModal } from './ConfirmModal';
 // En modo edit muestra el formulario; si no, foto, profesion,
 // descripcion + link al perfil. Boton "Volver" regresa a la lista.
 export function TeacherDetailScreen() {
-  const { selected, goBack, formMode, saving, startEdit, cancelForm, submitForm, removeTeacher } = useTeachers();
+  const { selected, goBack, formMode, saving, startEdit, cancelForm, submitForm, removeTeacher, newIds } = useTeachers();
   const { colors } = useTheme();
   const [confirmingDelete, setConfirmingDelete] = useState(false);
   if (!selected && formMode !== 'edit') return null;
@@ -45,6 +45,11 @@ export function TeacherDetailScreen() {
         accessibilityLabel={`Foto de ${selected.name}`}
       />
       <Text style={[styles.name, { color: colors.textDark }]}>{selected.name}</Text>
+      {newIds.some((v) => String(v) === String(selected.id)) ? (
+        <View style={styles.newPill}>
+          <Text style={styles.newPillText}>NUEVO EN LA NUBE</Text>
+        </View>
+      ) : null}
       <Text style={[styles.prof, { color: colors.primary }]}>{selected.profession}</Text>
       {selected.headline ? (
         <Text style={[styles.headline, { color: colors.textMedium }]}>{selected.headline}</Text>
@@ -112,6 +117,8 @@ const styles = StyleSheet.create({
   card: { borderRadius: RADIUS.xl, padding: 20, width: '100%', alignItems: 'center', gap: 8 },
   photo: { width: 140, height: 140, borderRadius: 70, backgroundColor: '#eee' },
   name: { fontSize: 20, fontWeight: '800', textAlign: 'center' },
+  newPill: { backgroundColor: '#D64545', borderRadius: 10, paddingVertical: 4, paddingHorizontal: 12 },
+  newPillText: { color: '#fff', fontSize: 11, fontWeight: '800', letterSpacing: 0.5 },
   prof: { fontSize: 14, fontWeight: '700', textAlign: 'center' },
   headline: { fontSize: 13, fontStyle: 'italic', textAlign: 'center' },
   desc: { fontSize: 14, lineHeight: 20, textAlign: 'left', marginTop: 8 },
