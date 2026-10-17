@@ -29,7 +29,7 @@ Además, un **Asistente IA** (botón flotante, micro `backend-ai-cloud` con Gemi
 | Pokémon Node (Supabase) | `https://pokeapi-expo.onrender.com/api-docs` | `…/api-docs.json` |
 | Anime Python (DynamoDB) | `https://pokeapi-expo-naruto.onrender.com/docs` | `…/openapi.json` (más `/redoc`) |
 | Docentes Node nativo (DynamoDB) | `https://pokeapi-expo-profesores.onrender.com/docs` | `…/openapi.json` |
-| Asistente IA (Gemini) | `https://pokeapi-expo-asistente.onrender.com/api-docs` | `…/api-docs.json` |
+| Asistente IA (Gemini) | `https://pokeapi-expo-ia.onrender.com/api-docs` | `…/api-docs.json` |
 
 ## Requisitos
 
@@ -65,7 +65,7 @@ cd backend-teachers-cloud && npm install && cd ..
 
 # 5. Micro cloud Asistente IA (solo si vas a tocarlo en local)
 cd backend-ai-cloud && npm install && cd ..
-# .env (ignorado): GEMINI_API_KEY (Google AI Studio) + GEMINI_MODEL=gemini-3.1-flash-lite
+# .env (ignorado): GEMINI_API_KEY (Google AI Studio) + GEMINI_MODEL=gemini-3.5-flash-lite
 # + PORT=3104
 ```
 
@@ -80,7 +80,7 @@ los micros (se incrustan al arrancar Expo: cámbialas con Expo detenido + `--cle
 EXPO_PUBLIC_API_URL=https://pokeapi-expo.onrender.com
 EXPO_PUBLIC_NARUTO_API_URL=https://pokeapi-expo-naruto.onrender.com
 EXPO_PUBLIC_TEACHERS_API_URL=https://pokeapi-expo-profesores.onrender.com
-EXPO_PUBLIC_AI_API_URL=https://pokeapi-expo-asistente.onrender.com
+EXPO_PUBLIC_AI_API_URL=https://pokeapi-expo-ia.onrender.com
 ```
 
 ## Cómo correrlo
@@ -183,7 +183,7 @@ docs/img/               Evidencias del reporte de funcionamiento.
 | Docentes | `DELETE /teachers/:id` | Borra por ID numérico |
 | Docentes | `GET /health` | `{"ok":true,"db":true,"mode":"dynamodb"}` (`503` sin BD, sin fallback) |
 | Asistente | `POST /chat` | Pregunta al asistente IA (`{"message":"…"}` → `{"reply":"…"}`); solo catálogo, sin memoria |
-| Asistente | `GET /health` | `{"ok":true,"gemini":true,"model":"gemini-3.1-flash-lite"}` |
+| Asistente | `GET /health` | `{"ok":true,"gemini":true,"model":"gemini-3.5-flash-lite"}` |
 
 Respuesta curada Pokémon (ej. `/pokemons/25`):
 

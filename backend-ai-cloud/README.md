@@ -4,14 +4,15 @@ Asistente de la app con cerebro **Gemini** (Google AI Studio) y **function calli
 contra los micros cloud existentes: Pokémon (`backend-poke-cloud`), Anime
 (`backend-anime-cloud`) y Docentes (`backend-teachers-cloud`). Desplegado en Render.
 
-- Producción: `https://pokeapi-expo-asistente.onrender.com` (nombre del Web Service en Render; si el subdominio cambia, actualizar `EXPO_PUBLIC_AI_API_URL`)
-- **Swagger UI: [`/api-docs`](https://pokeapi-expo-asistente.onrender.com/api-docs)** · JSON: `/api-docs.json`
+- Producción: `https://pokeapi-expo-ia.onrender.com` (Web Service `pokeapi-expo-ia` en Render)
+- **Swagger UI: [`/api-docs`](https://pokeapi-expo-ia.onrender.com/api-docs)** · JSON: `/api-docs.json`
 
 ## Endpoints
 
 | Método | Ruta | Descripción |
 |---|---|---|
-| GET | `/health` | `{"ok":true,"gemini":true,"model":"gemini-3.1-flash-lite"}` |
+| GET | `/` | Info del servicio (+ modelo activo) |
+| GET | `/health` | `{"ok":true,"gemini":true,"model":"gemini-3.5-flash-lite"}` |
 | POST | `/chat` | Pregunta al asistente: body `{"message":"¿Cuánto pesa Pikachu?"}` → `{"reply":"…","model":"…"}` |
 | GET | `/openapi.json` (+ `/api-docs.json`) | Spec OpenAPI 3.0 |
 | GET | `/api-docs` | Swagger UI interactivo |
@@ -79,5 +80,5 @@ Web Service, rama `feature/escalamiento-cloud-dbs`, `rootDir: backend-ai-cloud`,
 build `npm install`, start `npm start` (incluye `index.js` puente por si la
 plataforma arranca con `node index.js`, igual que teachers-cloud), health check `/health`.
 `GEMINI_API_KEY` se pega en el dashboard (sync: false, nunca en git);
-`GEMINI_MODEL` queda en `gemini-3.1-flash-lite` (cambiable sin tocar código).
+`GEMINI_MODEL` queda en `gemini-3.5-flash-lite` (cambiable sin tocar código).
 Ver `render.yaml`.

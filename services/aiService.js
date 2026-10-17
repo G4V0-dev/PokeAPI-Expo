@@ -1,7 +1,7 @@
 // Cliente del microservicio cloud Asistente IA (Gemini vía Render, solo URL pública).
 // Sin fallback local por decisión de escalamiento: todo va a la nube.
 // Sin memoria en el servidor: cada mensaje es independiente (no se envía historial).
-const BASE_URL = process.env.EXPO_PUBLIC_AI_API_URL || 'https://pokeapi-expo-asistente.onrender.com';
+const BASE_URL = process.env.EXPO_PUBLIC_AI_API_URL || 'https://pokeapi-expo-ia.onrender.com';
 
 export class AiApiError extends Error {
   constructor(message, status) {

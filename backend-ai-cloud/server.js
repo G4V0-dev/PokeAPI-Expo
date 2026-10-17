@@ -13,7 +13,7 @@ const swaggerJSDoc = require('swagger-jsdoc');
 
 const PORT = process.env.PORT || 3104;
 const GEMINI_API_KEY = process.env.GEMINI_API_KEY;
-const GEMINI_MODEL = process.env.GEMINI_MODEL || 'gemini-3.1-flash-lite';
+const GEMINI_MODEL = process.env.GEMINI_MODEL || 'gemini-3.5-flash-lite';
 const GEMINI_BASE = 'https://generativelanguage.googleapis.com/v1beta/models';
 const POKE_API_URL = (process.env.POKE_API_URL || 'https://pokeapi-expo.onrender.com').replace(/\/+$/, '');
 const NARUTO_API_URL = (process.env.NARUTO_API_URL || 'https://pokeapi-expo-naruto.onrender.com').replace(/\/+$/, '');
@@ -124,26 +124,31 @@ function allowRequest(ip) {
 }
 
 // --- Consulta a los micros cloud existentes (herramientas del modelo) ---
+// 2 intentos: un fallo de red o un 502/503/504 del spin-up de un micro gratuito
+// de Render se reintenta una vez tras 700 ms; los 4xx no se repiten.
 async function fetchToolJson(url, timeoutMs = TOOL_TIMEOUT_MS) {
-  const ctrl = new AbortController();
-  const timer = setTimeout(() => ctrl.abort(), timeoutMs);
-  let res;
-  try {
-    res = await fetch(url, { signal: ctrl.signal });
-  } catch {
-    const err = new Error('La nube no respondió (posible Render dormido: puede tardar ~50s en despertar).');
-    err.network = true;
-    throw err;
-  } finally {
-    clearTimeout(timer);
+  let lastErr;
+  for (let attempt = 1; attempt <= 2; attempt += 1) {
+    const ctrl = new AbortController();
+    const timer = setTimeout(() => ctrl.abort(), timeoutMs);
+    try {
+      const res = await fetch(url, { signal: ctrl.signal });
+      const body = await res.json().catch(() => ({}));
+      if (res.ok) return body;
+      const err = new Error(body.error || body.detail || `La nube respondió HTTP ${res.status}.`);
+      err.status = res.status;
+      if (![502, 503, 504].includes(res.status)) throw err;
+      lastErr = err;
+    } catch (e) {
+      if (e && e.status) throw e;
+      lastErr = new Error('La nube no respondió (posible Render dormido: puede tardar ~50s en despertar).');
+      lastErr.network = true;
+    } finally {
+      clearTimeout(timer);
+    }
+    if (attempt === 1) await new Promise((r) => setTimeout(r, 700));
   }
-  const body = await res.json().catch(() => ({}));
-  if (!res.ok) {
-    const err = new Error(body.error || body.detail || `La nube respondió HTTP ${res.status}.`);
-    err.status = res.status;
-    throw err;
-  }
-  return body;
+  throw lastErr;
 }
 
 // 'moves' se conserva aparte (truncado por executeTool); 'profileUrl' es dato
@@ -339,6 +344,25 @@ app.get('/health', (_req, res) => {
 
 /**
  * @openapi
+ * /:
+ *   get:
+ *     summary: Info del servicio (docs, salud y chat)
+ *     responses:
+ *       200:
+ *         description: Info básica del microservicio
+ */
+app.get('/', (_req, res) => {
+  res.json({
+    service: 'Asistente IA cloud — PokeAPI-Expo (Gemini)',
+    docs: '/api-docs',
+    health: '/health',
+    chat: 'POST /chat  body: {"message":"..."}',
+    model: GEMINI_MODEL,
+  });
+});
+
+/**
+ * @openapi
  * /chat:
  *   post:
  *     summary: Pregunta al asistente (pokémon, personajes de Naruto o docentes)
@@ -363,7 +387,7 @@ app.get('/health', (_req, res) => {
  *               type: object
  *               properties:
  *                 reply: { type: string, example: Pikachu pesa 6 kilogramos. }
- *                 model: { type: string, example: gemini-3.1-flash-lite }
+ *                 model: { type: string, example: gemini-3.5-flash-lite }
  *       400:
  *         description: message faltante, vacío o demasiado largo
  *       429:
