@@ -20,6 +20,8 @@ El front **nunca** llama a APIs públicas: consume JSON curado de la nube.
 
 Diseño generado en Stitch (MOBILE) y convertido a React Native con `StyleSheet.create`.
 
+Además, un **Asistente IA** (botón flotante, micro `backend-ai-cloud` con Gemini y function calling) consulta los tres micros y responde solo sobre estos catálogos.
+
 ## Dónde están documentadas las APIs (Swagger)
 
 | Micro | Swagger UI | JSON OpenAPI |
@@ -27,6 +29,7 @@ Diseño generado en Stitch (MOBILE) y convertido a React Native con `StyleSheet.
 | Pokémon Node (Supabase) | `https://pokeapi-expo.onrender.com/api-docs` | `…/api-docs.json` |
 | Anime Python (DynamoDB) | `https://pokeapi-expo-naruto.onrender.com/docs` | `…/openapi.json` (más `/redoc`) |
 | Docentes Node nativo (DynamoDB) | `https://pokeapi-expo-profesores.onrender.com/docs` | `…/openapi.json` |
+| Asistente IA (Gemini) | `https://pokeapi-expo-asistente.onrender.com/api-docs` | `…/api-docs.json` |
 
 ## Requisitos
 
@@ -37,6 +40,7 @@ Diseño generado en Stitch (MOBILE) y convertido a React Native con `StyleSheet.
 | Expo CLI | local del proyecto (`./node_modules/.bin/expo`, 54.x) |
 | Expo Go en el teléfono | compatible con **SDK 54** (vale red móvil/WiFi: la API es https pública) |
 | Python (solo dev del micro anime) | 3.11+ con `pip install -r backend-anime-cloud/requirements.txt` |
+| Google AI Studio (solo dev del micro asistente IA) | API key free para `backend-ai-cloud/.env` (`GEMINI_API_KEY`) |
 
 ## Instalación
 
@@ -58,12 +62,17 @@ cd backend-teachers-cloud && npm install && cd ..
 # Sin .env usa memoria con el mismo seed; con llaves AWS usa DynamoDB:
 # AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY, AWS_REGION=us-east-2,
 # TABLE_NAME=teachers, PORT=3103
+
+# 5. Micro cloud Asistente IA (solo si vas a tocarlo en local)
+cd backend-ai-cloud && npm install && cd ..
+# .env (ignorado): GEMINI_API_KEY (Google AI Studio) + GEMINI_MODEL=gemini-3.1-flash-lite
+# + PORT=3104
 ```
 
 ## Configuración
 
 `EXPO_PUBLIC_API_URL` / `EXPO_PUBLIC_NARUTO_API_URL` /
-`EXPO_PUBLIC_TEACHERS_API_URL` dicen al front dónde están
+`EXPO_PUBLIC_TEACHERS_API_URL` / `EXPO_PUBLIC_AI_API_URL` dicen al front dónde están
 los micros (se incrustan al arrancar Expo: cámbialas con Expo detenido + `--clear`).
 
 ```bash
@@ -71,6 +80,7 @@ los micros (se incrustan al arrancar Expo: cámbialas con Expo detenido + `--cle
 EXPO_PUBLIC_API_URL=https://pokeapi-expo.onrender.com
 EXPO_PUBLIC_NARUTO_API_URL=https://pokeapi-expo-naruto.onrender.com
 EXPO_PUBLIC_TEACHERS_API_URL=https://pokeapi-expo-profesores.onrender.com
+EXPO_PUBLIC_AI_API_URL=https://pokeapi-expo-asistente.onrender.com
 ```
 
 ## Cómo correrlo
@@ -94,6 +104,9 @@ cd backend-anime-cloud && python seed.js && uvicorn main:app --port 3102
 # Docentes :3103 + Docs http://localhost:3103/docs (Node nativo, sin Express, CRUD)
 cd backend-teachers-cloud && npm run seed && npm start
 # (el seed crea la tabla teachers si falta y carga teachers.seed.json; sin llaves AWS el micro responde 503, sin fallback en memoria)
+
+# Asistente IA :3104 + Swagger http://localhost:3104/api-docs (requiere GEMINI_API_KEY en .env)
+cd backend-ai-cloud && npm start
 ```
 
 ## Uso
@@ -117,6 +130,10 @@ cd backend-teachers-cloud && npm run seed && npm start
    detalle (descripción + link a LinkedIn) con botón **Volver**.
    Admin CRUD: **Agregar** en la lista, **Editar/Eliminar** en lista y detalle
    (formulario `TeacherForm.js`, sin auth por decisión del proyecto).
+8. **Asistente IA** (botón flotante ✨, visible en cualquier tab): chat que responde
+   **solo con datos de las BD cloud** (consulta los micros en vivo; sin conocimiento
+   propio del modelo) y se niega amablemente a otros temas. Sin memoria: cada
+   pregunta es independiente.
 
 ## Estructura
 
@@ -127,17 +144,21 @@ theme/tokens.js         Paleta (rojo fandom #D64545, amber #FFC83D) y radios
 services/pokemonService.js  fetch al micro cloud /pokemons + ApiError (sin axios, sin fallback local)
 services/narutoService.js   fetch al micro cloud /characters + NarutoApiError
 services/teachersService.js  fetch al micro cloud /teachers + TeachersApiError (GET path/query; CRUD con body JSON)
+services/aiService.js       fetch al micro cloud /chat + AiApiError (sin memoria; un mensaje por request)
 context/PokemonContext.js   Estado global; next/prev por lista de la nube (getPokemonIds)
 context/NarutoContext.js    Estado global; next/prev por prevId/nextId del payload
 context/TeachersContext.js  Estado global; lista auto + vista list|detail + admin CRUD (formMode/submitForm/removeTeacher)
+context/AssistantContext.js Estado del chat IA (hilo local de sesión + open/loading/send/clear)
 components/
   SearchBar.js  · BottomTabs.js  · GalleryScreen.js (3 imágenes)
   DataScreen.js (datos) · StatBar.js · EmptyState.js
   NarutoGalleryScreen.js · NarutoDataScreen.js
   TeachersScreen.js (lista + Agregar/Borrar + botón Ver información) · TeacherDetailScreen.js (detalle + Editar/Eliminar) · TeacherForm.js (form Crear/Editar)
+  AssistantFab.js (botón flotante) · AssistantModal.js (chat modal del asistente IA)
 backend-poke-cloud/     Micro Node+Swagger: /pokemons + /health (Supabase). Ver su README.
 backend-anime-cloud/    Micro Python+Swagger: /characters + /health (DynamoDB). Ver su README.
 backend-teachers-cloud/ Micro Node NATIVO sin Express + Swagger CRUD: /teachers + /health (solo DynamoDB, 503 sin BD). Ver su README.
+backend-ai-cloud/       Micro Node+Express+Swagger: POST /chat con Gemini (function calling a los otros 3 micros) + /health. Ver su README.
 backend/ · backend-naruto/  Micros locales legacy (puertos 3001/3002): respaldo de desarrollo.
 .tours/                 Tour guiado del flujo (CodeTour).
 docs/img/               Evidencias del reporte de funcionamiento.
@@ -161,6 +182,8 @@ docs/img/               Evidencias del reporte de funcionamiento.
 | Docentes | `PATCH /teachers/:id` | Parcial por ID numérico (body JSON) |
 | Docentes | `DELETE /teachers/:id` | Borra por ID numérico |
 | Docentes | `GET /health` | `{"ok":true,"db":true,"mode":"dynamodb"}` (`503` sin BD, sin fallback) |
+| Asistente | `POST /chat` | Pregunta al asistente IA (`{"message":"…"}` → `{"reply":"…"}`); solo catálogo, sin memoria |
+| Asistente | `GET /health` | `{"ok":true,"gemini":true,"model":"gemini-3.1-flash-lite"}` |
 
 Respuesta curada Pokémon (ej. `/pokemons/25`):
 
@@ -175,7 +198,7 @@ Respuesta curada Pokémon (ej. `/pokemons/25`):
 ```
 
 Errores: `400` sin query / validación CRUD (`name`+`profession`) · `404` fuera del catálogo (`{error: "…"}`; FastAPI usa `{detail: "…"}`) · `503` docentes sin BD (sin fallback).
-Pokémon/Anime solo lectura por `GET` (`405` a otro método); **Docentes permite escrituras CRUD con body JSON** (abiertas sin auth).
+Pokémon/Anime solo lectura por `GET` (`405` a otro método); **Docentes permite escrituras CRUD con body JSON** (abiertas sin auth). El asistente IA suma `429` (rate limit o free tier de Gemini) y `502` (Gemini o los micros no disponibles).
 
 Respuesta curada Docentes (ej. `/teachers/2`):
 
@@ -206,9 +229,9 @@ Respuesta curada Docentes (ej. `/teachers/2`):
 
 ## Deploy (Render, plan free)
 
-Los tres son Web Service de la rama `feature/escalamiento-cloud-dbs` (ver `render.yaml`
+Los cuatro son Web Service de la rama `feature/escalamiento-cloud-dbs` (ver `render.yaml`
 de cada micro): build, start, `rootDir`, health check `/health` y env vars
-(`DATABASE_URL` / llaves AWS + región + tabla) pegadas **en el dashboard**,
+(`DATABASE_URL` / llaves AWS + región + tabla / `GEMINI_API_KEY` + `GEMINI_MODEL`) pegadas **en el dashboard**,
 nunca en git (`.env` ignorados). El micro docentes es Node nativo sin Express
 (`npm start` → `server.js`, con `index.js` puente por si la plataforma arranca
 con `node index.js`).
@@ -232,3 +255,4 @@ con `node index.js`).
 | QR carga infinito | VM en NAT / firewall | `--tunnel` o adaptador puente |
 | Expo Go avisa de SDK | Go más nuevo que el proyecto (54) | `npx expo upgrade` (cambia el pin de `AGENTS.md`) |
 | DynamoDB `AccessDenied` en `us-east-1` | SCP de cuenta educativa lo bloquea | Usar `us-east-2` |
+| Asistente dice que "la nube está despertando" | Micros/servicio Render dormidos (free) | Reintentar: el propio chat lo indica (~50s) |

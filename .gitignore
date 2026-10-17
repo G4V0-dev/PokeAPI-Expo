@@ -54,6 +54,7 @@ __pycache__/
 backend-poke-cloud/.env
 backend-anime-cloud/.env
 backend-teachers-cloud/.env
+backend-ai-cloud/.env
 
 # informe local (no se publica)
 FUNCIONAMIENTO-MOBILE.md

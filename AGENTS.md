@@ -27,4 +27,9 @@ Read the exact versioned docs at https://docs.expo.dev/versions/v54.0.0/ before 
   Supabase). Anime → `https://pokeapi-expo-naruto.onrender.com/characters/:query`
   (`backend-anime-cloud/`, DynamoDB `us-east-2`). Anterior/siguiente Pokémon por lista
   de la nube (`getPokemonIds`); Naruto por `prevId`/`nextId` del payload.
+- **Asistente IA (rama escalamiento)**: botón flotante + `components/AssistantModal.js`;
+  front → `POST https://pokeapi-expo-asistente.onrender.com/chat` (`backend-ai-cloud/`,
+  Express+Swagger, Gemini `GEMINI_MODEL`, `EXPO_PUBLIC_AI_API_URL`). Responde SOLO con
+  datos de las 3 BD cloud (function calling; consulta forzada si la pregunta nombra
+  entidades/temas) y se niega amablemente a lo demás; sin memoria (un mensaje por request).
 - Tras cambiar `.env*`, reiniciar Expo (`--clear`): el env se incrusta al arrancar.

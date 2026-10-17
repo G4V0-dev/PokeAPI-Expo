@@ -2,10 +2,11 @@ import React, { useState } from 'react';
 import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 // Entrada de la app: Providers globales + Home con área (pokemon|naruto|teachers),
-// 4 estados (loading / error / empty / content) y 5 tabs.
+// 4 estados (loading / error / empty / content) y 5 tabs + asistente IA flotante.
 import { PokemonProvider, usePokemon } from './context/PokemonContext';
 import { NarutoProvider, useNaruto } from './context/NarutoContext';
 import { TeachersProvider, useTeachers } from './context/TeachersContext';
+import { AssistantProvider, useAssistant } from './context/AssistantContext';
 import { ThemeProvider, useTheme } from './context/ThemeContext';
 import { RADIUS } from './theme/tokens';
 import { SearchBar } from './components/SearchBar';
@@ -17,12 +18,15 @@ import { NarutoDataScreen } from './components/NarutoDataScreen';
 import { TeachersScreen } from './components/TeachersScreen';
 import { TeacherDetailScreen } from './components/TeacherDetailScreen';
 import { EmptyState } from './components/EmptyState';
+import { AssistantFab } from './components/AssistantFab';
+import { AssistantModal } from './components/AssistantModal';
 
 function Home() {
   const [area, setArea] = useState('pokemon'); // pokemon | naruto | teachers
   const poke = usePokemon();
   const naru = useNaruto();
   const teach = useTeachers();
+  const assistant = useAssistant();
   const { colors, narutoColors } = useTheme();
   const ctx = area === 'pokemon' ? poke : area === 'naruto' ? naru : teach;
   const isNaruto = area === 'naruto';
@@ -72,6 +76,9 @@ function Home() {
       </ScrollView>
 
       <BottomTabs area={area} setArea={setArea} />
+
+      <AssistantFab onPress={() => assistant.setOpen(true)} />
+      <AssistantModal />
     </View>
   );
 }
@@ -82,7 +89,9 @@ export default function App() {
       <PokemonProvider>
         <NarutoProvider>
           <TeachersProvider>
-            <Home />
+            <AssistantProvider>
+              <Home />
+            </AssistantProvider>
           </TeachersProvider>
         </NarutoProvider>
       </PokemonProvider>

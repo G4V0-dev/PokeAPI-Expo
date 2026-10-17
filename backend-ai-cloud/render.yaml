@@ -1,0 +1,17 @@
+services:
+  - type: web
+    name: pokeapi-expo-asistente
+    runtime: node
+    plan: free
+    branch: feature/escalamiento-cloud-dbs
+    rootDir: backend-ai-cloud
+    buildCommand: npm install
+    startCommand: npm start
+    healthCheckPath: /health
+    envVars:
+      - key: GEMINI_API_KEY
+        sync: false # pegar la key de Google AI Studio en el dashboard de Render (nunca en git)
+      - key: GEMINI_MODEL
+        value: gemini-3.1-flash-lite
+      - key: NODE_VERSION
+        value: 22.16.0
