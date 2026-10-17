@@ -76,7 +76,8 @@ de Gemini · `502` Gemini o los micros no disponibles.
 ## Deploy (Render)
 
 Web Service, rama `feature/escalamiento-cloud-dbs`, `rootDir: backend-ai-cloud`,
-build `npm install`, start `npm start`, health check `/health`.
+build `npm install`, start `npm start` (incluye `index.js` puente por si la
+plataforma arranca con `node index.js`, igual que teachers-cloud), health check `/health`.
 `GEMINI_API_KEY` se pega en el dashboard (sync: false, nunca en git);
 `GEMINI_MODEL` queda en `gemini-3.1-flash-lite` (cambiable sin tocar código).
 Ver `render.yaml`.
