@@ -14,6 +14,7 @@ import {
 import { Ionicons } from '@expo/vector-icons';
 import { RADIUS } from '../theme/tokens';
 import { useTheme } from '../context/ThemeContext';
+import { useSettings } from '../context/SettingsContext';
 import { useAssistant } from '../context/AssistantContext';
 
 // Preguntas de ejemplo cuando el hilo está vacío (solo temas del catálogo).
@@ -55,9 +56,11 @@ function Bubble({ item, colors }) {
 // El servidor no guarda memoria: cada pregunta es independiente.
 export function AssistantModal() {
   const { colors } = useTheme();
+  const { aiProvider, providers, timeoutSeconds } = useSettings();
   const { messages, loading, open, setOpen, send, clear } = useAssistant();
   const [draft, setDraft] = useState('');
   const listRef = useRef(null);
+  const providerName = providers.find((p) => p.id === aiProvider)?.name || aiProvider;
 
   const submit = (text) => {
     const t = String(text != null ? text : draft).trim();
@@ -94,7 +97,7 @@ export function AssistantModal() {
             </Pressable>
           </View>
           <Text style={[styles.subtitle, { color: colors.textMedium }]}>
-            Solo pokémon, personajes de Naruto y docentes · cada pregunta es independiente
+            Solo pokémon, personajes de Naruto y docentes · {providerName} · espera {timeoutSeconds}s
           </Text>
 
           <FlatList
@@ -134,7 +137,7 @@ export function AssistantModal() {
             <View style={styles.thinking}>
               <ActivityIndicator size="small" color={colors.primary} />
               <Text style={[styles.thinkingText, { color: colors.textMedium }]}>
-                Pensando… si la nube está dormida puede tardar ~50s
+                Pensando con {providerName}… máx. {timeoutSeconds} s
               </Text>
             </View>
           )}

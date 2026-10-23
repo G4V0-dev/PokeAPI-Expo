@@ -7,6 +7,7 @@ import { PokemonProvider, usePokemon } from './context/PokemonContext';
 import { NarutoProvider, useNaruto } from './context/NarutoContext';
 import { TeachersProvider, useTeachers } from './context/TeachersContext';
 import { AssistantProvider, useAssistant } from './context/AssistantContext';
+import { SettingsProvider } from './context/SettingsContext';
 import { ThemeProvider, useTheme } from './context/ThemeContext';
 import { RADIUS } from './theme/tokens';
 import { SearchBar } from './components/SearchBar';
@@ -20,9 +21,12 @@ import { TeacherDetailScreen } from './components/TeacherDetailScreen';
 import { EmptyState } from './components/EmptyState';
 import { AssistantFab } from './components/AssistantFab';
 import { AssistantModal } from './components/AssistantModal';
+import { SettingsFab } from './components/SettingsFab';
+import { SettingsModal } from './components/SettingsModal';
 
 function Home() {
   const [area, setArea] = useState('pokemon'); // pokemon | naruto | teachers
+  const [settingsOpen, setSettingsOpen] = useState(false);
   const poke = usePokemon();
   const naru = useNaruto();
   const teach = useTeachers();
@@ -77,7 +81,9 @@ function Home() {
 
       <BottomTabs area={area} setArea={setArea} />
 
+      <SettingsFab onPress={() => setSettingsOpen(true)} />
       <AssistantFab onPress={() => assistant.setOpen(true)} />
+      <SettingsModal visible={settingsOpen} onClose={() => setSettingsOpen(false)} />
       <AssistantModal />
     </View>
   );
@@ -86,15 +92,17 @@ function Home() {
 export default function App() {
   return (
     <ThemeProvider>
-      <PokemonProvider>
-        <NarutoProvider>
-          <TeachersProvider>
-            <AssistantProvider>
-              <Home />
-            </AssistantProvider>
-          </TeachersProvider>
-        </NarutoProvider>
-      </PokemonProvider>
+      <SettingsProvider>
+        <PokemonProvider>
+          <NarutoProvider>
+            <TeachersProvider>
+              <AssistantProvider>
+                <Home />
+              </AssistantProvider>
+            </TeachersProvider>
+          </NarutoProvider>
+        </PokemonProvider>
+      </SettingsProvider>
     </ThemeProvider>
   );
 }

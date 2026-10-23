@@ -1,4 +1,5 @@
-import React, { createContext, useCallback, useContext, useMemo, useState } from 'react';
+import React, { createContext, useCallback, useContext, useMemo, useRef, useState } from 'react';
+import { useSettings } from './SettingsContext';
 import { askAssistant } from '../services/aiService';
 
 const AssistantContext = createContext(null);
@@ -16,29 +17,49 @@ const nextId = () => {
  * - Burbujas con 3 roles: user | assistant | error (red/límite/tema fuera de alcance).
  */
 export function AssistantProvider({ children }) {
+  const { aiProvider, timeoutMs } = useSettings();
   const [messages, setMessages] = useState([]);
   const [loading, setLoading] = useState(false);
   const [open, setOpen] = useState(false);
+  const abortRef = useRef(null);
+  const requestRef = useRef(0);
 
   const send = useCallback(
     async (raw) => {
       const text = String(raw || '').trim();
       if (!text || loading) return;
+      if (abortRef.current) abortRef.current.abort();
+      const ctrl = new AbortController();
+      abortRef.current = ctrl;
+      const requestId = requestRef.current + 1;
+      requestRef.current = requestId;
       setMessages((prev) => [...prev, { id: nextId(), role: 'user', text }]);
       setLoading(true);
       try {
-        const data = await askAssistant(text);
+        const data = await askAssistant(text, {
+          provider: aiProvider,
+          timeoutMs,
+          signal: ctrl.signal,
+        });
+        if (requestId !== requestRef.current) return;
         setMessages((prev) => [...prev, { id: nextId(), role: 'assistant', text: data.reply }]);
       } catch (e) {
-        setMessages((prev) => [...prev, { id: nextId(), role: 'error', text: e.message || 'Error de red' }]);
+        if (requestId === requestRef.current && e?.name !== 'AbortError') {
+          setMessages((prev) => [...prev, { id: nextId(), role: 'error', text: e.message || 'Error de red' }]);
+        }
       } finally {
-        setLoading(false);
+        if (requestId === requestRef.current) setLoading(false);
       }
     },
-    [loading]
+    [loading, aiProvider, timeoutMs]
   );
 
-  const clear = useCallback(() => setMessages([]), []);
+  const clear = useCallback(() => {
+    requestRef.current += 1;
+    if (abortRef.current) abortRef.current.abort();
+    setMessages([]);
+    setLoading(false);
+  }, []);
 
   const value = useMemo(
     () => ({ messages, loading, open, setOpen, send, clear }),

@@ -13,5 +13,15 @@ services:
         sync: false # pegar la key de Google AI Studio en el dashboard de Render (nunca en git)
       - key: GEMINI_MODEL
         value: gemini-3.5-flash-lite
+      - key: OPENAI_API_KEY
+        sync: false # opcional: pegar la key de OpenAI en el dashboard (nunca en git)
+      - key: OPENAI_MODEL
+        value: gpt-4o-mini
+      - key: DEEPSEEK_API_KEY
+        sync: false # opcional: pegar la key de DeepSeek en el dashboard (nunca en git)
+      - key: DEEPSEEK_MODEL
+        value: deepseek-chat
+      - key: DEFAULT_AI_PROVIDER
+        value: gemini
       - key: NODE_VERSION
         value: 22.16.0
