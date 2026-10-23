@@ -15,14 +15,6 @@ Read the exact versioned docs at https://docs.expo.dev/versions/v54.0.0/ before 
 - **Naruto espejo**: `GET /consultaNaruto?query=` (`backend-naruto/server.js`,
   puerto 3002, `EXPO_PUBLIC_NARUTO_API_URL`, fuente Dattebayo). Anterior/siguiente
   por vecinos del catálogo (`prevId`/`nextId`, IDs no secuenciales).
-- **Asistente IA**: chat flotante (`context/AssistantContext.js`) contra
-  `backend-ai/server.js` (puerto 3004, `EXPO_PUBLIC_AI_API_URL`). Multi-proveedor
-  Gemini/OpenAI/DeepSeek; las API keys viven solo en `backend-ai/.env` (ignorado).
-  Function calling contra `/listaPokemon`, `/consultaPokemon`, `/listaNaruto`,
-  `/consultaNaruto` de los micros locales.
-- **Parámetros de sesión**: `context/SettingsContext.js` expone `timeoutMs`
-  (20/40/80/160 s, default 40) y `aiProvider`. Aplica a Pokémon, Naruto e IA;
-  FAB de engranaje + modal. Sin AsyncStorage: al reiniciar vuelven los defaults.
 - **Estado global**: `context/PokemonContext.js` (`usePokemon`). Galería = 3 imágenes,
   Datos = resto. 4 estados: loading / error / empty / content.
 - **Tokens**: `theme/tokens.js` (rojo fandom `#D64545`). Sin NativeWind salvo pedido explícito.
