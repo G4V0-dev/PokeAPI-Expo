@@ -44,6 +44,26 @@ async function fetchFromPokeApi(query) {
   return res.json();
 }
 
+// GET /listaPokemon?limit=25 — resumen para el asistente IA (no lo usa el front).
+app.get('/listaPokemon', async (req, res) => {
+  const raw = Number.parseInt(req.query.limit, 10);
+  const limit = Math.min(Math.max(Number.isFinite(raw) ? raw : 25, 1), 100);
+  try {
+    const response = await fetch(`${POKEAPI_BASE}?limit=${limit}`);
+    if (!response.ok) throw new Error('No se pudo obtener el catálogo de Pokémon.');
+    const body = await response.json();
+    const items = (body.results || [])
+      .map((p) => {
+        const parts = String(p.url || '').split('/').filter(Boolean);
+        return { id: Number(parts[parts.length - 1]), name: p.name };
+      })
+      .filter((p) => Number.isFinite(p.id));
+    return res.json({ total: body.count || items.length, limit, items });
+  } catch (e) {
+    return res.status(502).json({ error: e.message || 'No se pudo obtener el catálogo de Pokémon.' });
+  }
+});
+
 // GET /consultaPokemon?query=pikachu  |  ?nombre=pikachu  |  /consultaPokemon/:query
 async function handler(req, res) {
   let query = req.query.query || req.query.nombre || req.params.query;

@@ -2,9 +2,11 @@ import React, { useState } from 'react';
 import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 // Entrada de la app: Providers globales + Home con área (pokemon|naruto),
-// 4 estados (loading / error / empty / content) y 4 tabs.
+// 4 estados (loading / error / empty / content), 4 tabs, asistente IA y ajustes.
+import { SettingsProvider } from './context/SettingsContext';
 import { PokemonProvider, usePokemon } from './context/PokemonContext';
 import { NarutoProvider, useNaruto } from './context/NarutoContext';
+import { AssistantProvider, useAssistant } from './context/AssistantContext';
 import { COLORS, NARUTO_COLORS, RADIUS } from './theme/tokens';
 import { SearchBar } from './components/SearchBar';
 import { BottomTabs } from './components/BottomTabs';
@@ -13,11 +15,17 @@ import { DataScreen } from './components/DataScreen';
 import { NarutoGalleryScreen } from './components/NarutoGalleryScreen';
 import { NarutoDataScreen } from './components/NarutoDataScreen';
 import { EmptyState } from './components/EmptyState';
+import { AssistantFab } from './components/AssistantFab';
+import { AssistantModal } from './components/AssistantModal';
+import { SettingsFab } from './components/SettingsFab';
+import { SettingsModal } from './components/SettingsModal';
 
 function Home() {
   const [area, setArea] = useState('pokemon'); // pokemon | naruto
+  const [settingsOpen, setSettingsOpen] = useState(false);
   const poke = usePokemon();
   const naru = useNaruto();
+  const assistant = useAssistant();
   const ctx = area === 'pokemon' ? poke : naru;
   const isNaruto = area === 'naruto';
   const accent = isNaruto ? NARUTO_COLORS.primary : COLORS.primary;
@@ -63,17 +71,26 @@ function Home() {
       </ScrollView>
 
       <BottomTabs area={area} setArea={setArea} />
+
+      <SettingsFab onPress={() => setSettingsOpen(true)} />
+      <AssistantFab onPress={() => assistant.setOpen(true)} />
+      <SettingsModal visible={settingsOpen} onClose={() => setSettingsOpen(false)} />
+      <AssistantModal />
     </View>
   );
 }
 
 export default function App() {
   return (
-    <PokemonProvider>
-      <NarutoProvider>
-        <Home />
-      </NarutoProvider>
-    </PokemonProvider>
+    <SettingsProvider>
+      <PokemonProvider>
+        <NarutoProvider>
+          <AssistantProvider>
+            <Home />
+          </AssistantProvider>
+        </NarutoProvider>
+      </PokemonProvider>
+    </SettingsProvider>
   );
 }
 
@@ -85,7 +102,7 @@ const styles = StyleSheet.create({
     borderBottomLeftRadius: 20, borderBottomRightRadius: 20, elevation: 4, zIndex: 10,
   },
   headerTitle: { fontSize: 22, fontWeight: '700', color: '#fff', marginLeft: 10, letterSpacing: 0.5 },
-  scroll: { paddingHorizontal: 20, paddingTop: 20, paddingBottom: 24 },
+  scroll: { paddingHorizontal: 20, paddingTop: 20, paddingBottom: 120 },
   loader: { marginTop: 40 },
   errorBox: { backgroundColor: COLORS.surface, borderRadius: RADIUS.xl, padding: 20, alignItems: 'center', width: '100%' },
   errorText: { fontSize: 15, color: COLORS.textDark, fontWeight: '600', textAlign: 'center', marginBottom: 12 },

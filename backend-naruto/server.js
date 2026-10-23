@@ -99,6 +99,26 @@ async function fetchByName(name) {
   return list.find((c) => String(c.name).toLowerCase() === q) || list[0];
 }
 
+// GET /listaNaruto?limit=25 — resumen para el asistente IA (no lo usa el front).
+app.get('/listaNaruto', async (req, res) => {
+  const raw = Number.parseInt(req.query.limit, 10);
+  const limit = Math.min(Math.max(Number.isFinite(raw) ? raw : 25, 1), 100);
+  try {
+    const response = await fetch(`${NARUTO_BASE}?page=1&limit=${limit}`);
+    if (!response.ok) throw new Error('No se pudo obtener el catálogo de Naruto.');
+    const body = await response.json();
+    const items = (body.characters || []).map((c) => {
+      const personal = c.personal || {};
+      const aff = personal.affiliation;
+      const villages = Array.isArray(aff) ? aff : aff ? [aff] : [];
+      return { id: c.id, name: c.name, clan: personal.clan || null, villages };
+    });
+    return res.json({ total: body.total || items.length, limit, items });
+  } catch (e) {
+    return res.status(502).json({ error: e.message || 'No se pudo obtener el catálogo de Naruto.' });
+  }
+});
+
 // GET /consultaNaruto?query=sasuke | ?nombre= | /consultaNaruto/:query (nombre o ID)
 async function handler(req, res) {
   let query = req.query.query || req.query.nombre || req.params.query;
