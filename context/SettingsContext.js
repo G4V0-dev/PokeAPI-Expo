@@ -10,7 +10,7 @@ export const TIMEOUT_OPTIONS = [20000, 40000, 80000, 160000];
 // Proveedores soportados por backend-ai-cloud. La API key vive solo en el backend.
 export const AI_PROVIDERS = [
   { id: 'gemini', name: 'Gemini', description: 'Google AI Studio' },
-  { id: 'groq', name: 'Groq', description: 'API compatible con OpenAI (Llama 3.3)' },
+  { id: 'groq', name: 'Groq', description: 'API compatible con OpenAI (GPT-OSS 120B)' },
   { id: 'deepseek', name: 'DeepSeek', description: 'API compatible con OpenAI' },
 ];
 export const DEFAULT_AI_PROVIDER = 'gemini';

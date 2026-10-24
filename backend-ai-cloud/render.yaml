@@ -16,7 +16,7 @@ services:
       - key: GROQ_API_KEY
         sync: false # opcional: pegar la key de Groq en el dashboard (nunca en git)
       - key: GROQ_MODEL
-        value: llama-3.3-70b-versatile
+        value: openai/gpt-oss-120b
       - key: DEEPSEEK_API_KEY
         sync: false # opcional: pegar la key de DeepSeek en el dashboard (nunca en git)
       - key: DEEPSEEK_MODEL

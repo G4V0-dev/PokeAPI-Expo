@@ -21,7 +21,7 @@ Asistente de la app con cerebro **Gemini, Groq o DeepSeek** (el front elige) y
 ## Proveedores y timeout
 
 - **Gemini** (`GEMINI_API_KEY`, default `gemini-3.5-flash-lite`).
-- **Groq** (`GROQ_API_KEY`, default `llama-3.3-70b-versatile`).
+- **Groq** (`GROQ_API_KEY`, default `openai/gpt-oss-120b`).
 - **DeepSeek** (`DEEPSEEK_API_KEY`, default `deepseek-chat`, API compatible con OpenAI).
 - El front manda `provider`; sin key para ese proveedor el micro responde **503**
   (no mata el proceso). `DEFAULT_AI_PROVIDER` define el fallback.
