@@ -31,8 +31,9 @@ Read the exact versioned docs at https://docs.expo.dev/versions/v54.0.0/ before 
   front → `POST https://pokeapi-expo-ia.onrender.com/chat` (`backend-ai-cloud/`,
   Express+Swagger, `EXPO_PUBLIC_AI_API_URL`). Multi-proveedor Gemini/OpenAI/DeepSeek;
   las API keys viven solo en `backend-ai-cloud/.env` (ignorado). Responde SOLO con
-  datos de las 3 BD cloud (function calling; consulta forzada si la pregunta nombra
-  entidades/temas) y se niega amablemente a lo demás; sin memoria (un mensaje por request).
+  datos de las 3 BD cloud (function calling; consulta forzada en Gemini si la
+  pregunta nombra entidades/temas) y se niega amablemente a lo demás; sin memoria
+  (un mensaje por request).
 - **Parámetros de sesión**: `context/SettingsContext.js` expone `timeoutMs`
   (20/40/80/160 s, default 40) y `aiProvider`. Aplica a Pokémon, Naruto e IA;
   FAB de engranaje + modal. Sin AsyncStorage: al reiniciar vuelven los defaults.
