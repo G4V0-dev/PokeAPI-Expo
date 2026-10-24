@@ -1,6 +1,6 @@
 # AI Cloud — Asistente IA multi-proveedor (Node + Express + Swagger)
 
-Asistente de la app con cerebro **Gemini, OpenAI o DeepSeek** (el front elige) y
+Asistente de la app con cerebro **Gemini, Groq o DeepSeek** (el front elige) y
 **function calling** contra los micros cloud existentes: Pokémon
 (`backend-poke-cloud`), Anime (`backend-anime-cloud`) y Docentes
 (`backend-teachers-cloud`). Desplegado en Render.
@@ -14,14 +14,14 @@ Asistente de la app con cerebro **Gemini, OpenAI o DeepSeek** (el front elige) y
 |---|---|---|
 | GET | `/` | Info del servicio (+ proveedor default) |
 | GET | `/health` | `{"ok":true,"defaultProvider":"gemini","providers":{…}}` (cada uno con `configured`) |
-| POST | `/chat` | `{"message":"…","provider":"gemini|openai|deepseek","timeoutMs":40000}` → `{"reply":"…","provider":"…","model":"…"}` |
+| POST | `/chat` | `{"message":"…","provider":"gemini|groq|deepseek","timeoutMs":40000}` → `{"reply":"…","provider":"…","model":"…"}` |
 | GET | `/openapi.json` (+ `/api-docs.json`) | Spec OpenAPI 3.0 |
 | GET | `/api-docs` | Swagger UI interactivo |
 
 ## Proveedores y timeout
 
 - **Gemini** (`GEMINI_API_KEY`, default `gemini-3.5-flash-lite`).
-- **OpenAI** (`OPENAI_API_KEY`, default `gpt-4o-mini`).
+- **Groq** (`GROQ_API_KEY`, default `llama-3.3-70b-versatile`).
 - **DeepSeek** (`DEEPSEEK_API_KEY`, default `deepseek-chat`, API compatible con OpenAI).
 - El front manda `provider`; sin key para ese proveedor el micro responde **503**
   (no mata el proceso). `DEFAULT_AI_PROVIDER` define el fallback.
@@ -71,12 +71,12 @@ fallo de red (spin-up de Render).
 
 ```bash
 npm install
-cp .env.example .env   # completa al menos una key: GEMINI_API_KEY / OPENAI_API_KEY / DEEPSEEK_API_KEY
+cp .env.example .env   # completa al menos una key: GEMINI_API_KEY / GROQ_API_KEY / DEEPSEEK_API_KEY
 npm start              # :3104, docs en http://localhost:3104/api-docs
 
 curl http://localhost:3104/health
 curl -X POST http://localhost:3104/chat -H "Content-Type: application/json" -d '{"message":"¿Cuánto pesa Pikachu?"}'
-curl -X POST http://localhost:3104/chat -H "Content-Type: application/json" -d '{"message":"¿Quién es Sasuke?","provider":"openai","timeoutMs":80000}'
+curl -X POST http://localhost:3104/chat -H "Content-Type: application/json" -d '{"message":"¿Quién es Sasuke?","provider":"groq","timeoutMs":80000}'
 curl -X POST http://localhost:3104/chat -H "Content-Type: application/json" -d '{"message":"Cuéntame un chiste"}'
 ```
 
@@ -94,5 +94,5 @@ Web Service, rama `feature/escalamiento-cloud-dbs`, `rootDir: backend-ai-cloud`,
 build `npm install`, start `npm start` (incluye `index.js` puente por si la
 plataforma arranca con `node index.js`, igual que teachers-cloud), health check `/health`.
 Pega en el dashboard las keys que quieras habilitar (`GEMINI_API_KEY`,
-`OPENAI_API_KEY`, `DEEPSEEK_API_KEY`; sync: false, nunca en git) y sus modelos.
+`GROQ_API_KEY`, `DEEPSEEK_API_KEY`; sync: false, nunca en git) y sus modelos.
 `DEFAULT_AI_PROVIDER` es opcional (default `gemini`). Ver `render.yaml`.

@@ -29,7 +29,7 @@ Read the exact versioned docs at https://docs.expo.dev/versions/v54.0.0/ before 
   de la nube (`getPokemonIds`); Naruto por `prevId`/`nextId` del payload.
 - **Asistente IA (rama escalamiento)**: botón flotante + `components/AssistantModal.js`;
   front → `POST https://pokeapi-expo-ia.onrender.com/chat` (`backend-ai-cloud/`,
-  Express+Swagger, `EXPO_PUBLIC_AI_API_URL`). Multi-proveedor Gemini/OpenAI/DeepSeek;
+  Express+Swagger, `EXPO_PUBLIC_AI_API_URL`). Multi-proveedor Gemini/Groq/DeepSeek;
   las API keys viven solo en `backend-ai-cloud/.env` (ignorado). Responde SOLO con
   datos de las 3 BD cloud (function calling; consulta forzada en Gemini si la
   pregunta nombra entidades/temas) y se niega amablemente a lo demás; sin memoria

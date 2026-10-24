@@ -1,4 +1,4 @@
-// Cliente del microservicio cloud Asistente IA (Gemini/OpenAI/DeepSeek vía Render).
+// Cliente del microservicio cloud Asistente IA (Gemini/Groq/DeepSeek vía Render).
 // Sin fallback local por decisión de escalamiento: todo va a la nube.
 // Sin memoria en el servidor: cada mensaje es independiente (no se envía historial).
 import { createTimeoutSignal, timeoutMessage } from './http';

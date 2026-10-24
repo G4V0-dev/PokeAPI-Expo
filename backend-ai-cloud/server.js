@@ -1,6 +1,6 @@
 /**
  * Microservicio cloud Asistente IA (Node + Express + Swagger).
- * Cerebro multi-proveedor: Gemini, OpenAI o DeepSeek (el front elige uno).
+ * Cerebro multi-proveedor: Gemini, Groq o DeepSeek (el front elige uno).
  * Function calling contra los micros cloud de Pokémon, Anime y Docentes.
  * Solo responde sobre el catálogo de la app y se niega amablemente a lo demás;
  * cada mensaje es independiente (sin memoria). Docs: GET /api-docs
@@ -38,13 +38,13 @@ const PROVIDERS = {
     model: process.env.GEMINI_MODEL || 'gemini-3.5-flash-lite',
     baseUrl: (process.env.GEMINI_BASE_URL || 'https://generativelanguage.googleapis.com/v1beta/models').replace(/\/+$/, ''),
   },
-  openai: {
-    id: 'openai',
-    label: 'OpenAI',
-    keyEnv: 'OPENAI_API_KEY',
-    apiKey: process.env.OPENAI_API_KEY,
-    model: process.env.OPENAI_MODEL || 'gpt-4o-mini',
-    baseUrl: (process.env.OPENAI_BASE_URL || 'https://api.openai.com/v1').replace(/\/+$/, ''),
+  groq: {
+    id: 'groq',
+    label: 'Groq',
+    keyEnv: 'GROQ_API_KEY',
+    apiKey: process.env.GROQ_API_KEY,
+    model: process.env.GROQ_MODEL || 'llama-3.3-70b-versatile',
+    baseUrl: (process.env.GROQ_BASE_URL || 'https://api.groq.com/openai/v1').replace(/\/+$/, ''),
   },
   deepseek: {
     id: 'deepseek',
@@ -523,7 +523,7 @@ const swaggerSpec = swaggerJSDoc({
       title: 'Asistente IA Cloud — multi-proveedor (Pokémon/Naruto/Docentes)',
       version: '2.0.0',
       description:
-        'Asistente con function calling sobre los micros cloud de Pokémon (Supabase), Anime (DynamoDB) y Docentes (DynamoDB). El front elige proveedor (gemini/openai/deepseek) y timeout; las API keys viven solo en este micro. Solo responde sobre el catálogo de la app; sin memoria.',
+        'Asistente con function calling sobre los micros cloud de Pokémon (Supabase), Anime (DynamoDB) y Docentes (DynamoDB). El front elige proveedor (gemini/groq/deepseek) y timeout; las API keys viven solo en este micro. Solo responde sobre el catálogo de la app; sin memoria.',
     },
     servers: [{ url: BASE_URL_DOC, description: process.env.RENDER_EXTERNAL_URL ? 'Render' : 'Local' }],
   },
@@ -564,10 +564,10 @@ app.get('/health', (_req, res) => {
  */
 app.get('/', (_req, res) => {
   res.json({
-    service: 'Asistente IA cloud — PokeAPI-Expo (Gemini/OpenAI/DeepSeek)',
+    service: 'Asistente IA cloud — PokeAPI-Expo (Gemini/Groq/DeepSeek)',
     docs: '/api-docs',
     health: '/health',
-    chat: 'POST /chat  body: {"message":"...","provider":"gemini|openai|deepseek","timeoutMs":40000}',
+    chat: 'POST /chat  body: {"message":"...","provider":"gemini|groq|deepseek","timeoutMs":40000}',
     defaultProvider: DEFAULT_PROVIDER,
   });
 });
@@ -591,7 +591,7 @@ app.get('/', (_req, res) => {
  *                 example: ¿Cuánto pesa Pikachu?
  *               provider:
  *                 type: string
- *                 enum: [gemini, openai, deepseek]
+ *                 enum: [gemini, groq, deepseek]
  *                 default: gemini
  *               timeoutMs:
  *                 type: integer
@@ -633,7 +633,7 @@ app.post('/chat', async (req, res) => {
   const requestedProvider = String(req.body?.provider || DEFAULT_PROVIDER).toLowerCase();
   const cfg = PROVIDERS[requestedProvider];
   if (!cfg) {
-    return res.status(400).json({ error: 'Proveedor inválido. Usa gemini, openai o deepseek.' });
+    return res.status(400).json({ error: 'Proveedor inválido. Usa gemini, groq o deepseek.' });
   }
   if (!cfg.apiKey) {
     return res.status(503).json({

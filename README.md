@@ -20,7 +20,7 @@ El front **nunca** llama a APIs públicas: consume JSON curado de la nube.
 
 Diseño generado en Stitch (MOBILE) y convertido a React Native con `StyleSheet.create`.
 
-Además, un **Asistente IA** (botón flotante, micro `backend-ai-cloud` con Gemini/OpenAI/DeepSeek y function calling) consulta los tres micros y responde solo sobre estos catálogos. Un **FAB de engranaje** permite elegir proveedor y timeout de sesión.
+Además, un **Asistente IA** (botón flotante, micro `backend-ai-cloud` con Gemini/Groq/DeepSeek y function calling) consulta los tres micros y responde solo sobre estos catálogos. Un **FAB de engranaje** permite elegir proveedor y timeout de sesión.
 
 ## Dónde están documentadas las APIs (Swagger)
 
@@ -40,7 +40,7 @@ Además, un **Asistente IA** (botón flotante, micro `backend-ai-cloud` con Gemi
 | Expo CLI | local del proyecto (`./node_modules/.bin/expo`, 54.x) |
 | Expo Go en el teléfono | compatible con **SDK 54** (vale red móvil/WiFi: la API es https pública) |
 | Python (solo dev del micro anime) | 3.11+ con `pip install -r backend-anime-cloud/requirements.txt` |
-| Google AI Studio / OpenAI / DeepSeek (solo dev del micro asistente IA) | API key free para `backend-ai-cloud/.env` (`GEMINI_API_KEY`, `OPENAI_API_KEY` o `DEEPSEEK_API_KEY`) |
+| Google AI Studio / Groq / DeepSeek (solo dev del micro asistente IA) | API key free para `backend-ai-cloud/.env` (`GEMINI_API_KEY`, `GROQ_API_KEY` o `DEEPSEEK_API_KEY`) |
 
 ## Instalación
 
@@ -65,8 +65,8 @@ cd backend-teachers-cloud && npm install && cd ..
 
 # 5. Micro cloud Asistente IA (solo si vas a tocarlo en local)
 cd backend-ai-cloud && npm install && cd ..
-# .env (ignorado): GEMINI_API_KEY y/o OPENAI_API_KEY y/o DEEPSEEK_API_KEY
-# + modelos (GEMINI_MODEL, OPENAI_MODEL, DEEPSEEK_MODEL) + PORT=3104
+# .env (ignorado): GEMINI_API_KEY y/o GROQ_API_KEY y/o DEEPSEEK_API_KEY
+# + modelos (GEMINI_MODEL, GROQ_MODEL, DEEPSEEK_MODEL) + PORT=3104
 # El front manda provider; sin key para ese proveedor el micro responde 503.
 ```
 
@@ -85,7 +85,7 @@ EXPO_PUBLIC_AI_API_URL=https://pokeapi-expo-ia.onrender.com
 ```
 
 **Parámetros de sesión** (FAB ⚙️): timeout `20/40/80/160 s` (default 40) y proveedor
-`Gemini/OpenAI/DeepSeek` (default Gemini). Aplica a Pokémon, Naruto y al asistente;
+`Gemini/Groq/DeepSeek` (default Gemini). Aplica a Pokémon, Naruto y al asistente;
 sin AsyncStorage, al reiniciar vuelven los defaults. El timeout se envía al micro IA
 y se aplica también en el front; el backend lo limita a `5–170 s`. Si Render está
 dormido (~50 s), sube el timeout a 80 o 160 s.
@@ -113,7 +113,7 @@ cd backend-teachers-cloud && npm run seed && npm start
 # (el seed crea la tabla teachers si falta y carga teachers.seed.json; sin llaves AWS el micro responde 503, sin fallback en memoria)
 
 # Asistente IA :3104 + Swagger http://localhost:3104/api-docs
-# (requiere al menos una API key en .env: GEMINI_API_KEY / OPENAI_API_KEY / DEEPSEEK_API_KEY)
+# (requiere al menos una API key en .env: GEMINI_API_KEY / GROQ_API_KEY / DEEPSEEK_API_KEY)
 cd backend-ai-cloud && npm start
 ```
 
@@ -144,7 +144,7 @@ cd backend-ai-cloud && npm start
    pregunta es independiente. El proveedor se elige en ⚙️; el timeout se aplica a
    la consulta completa (front + micro).
 9. **Ajustes ⚙️** (FAB sobre el de IA): timeout `20/40/80/160 s` y proveedor
-   `Gemini/OpenAI/DeepSeek`. Solo sesión: al reiniciar vuelven 40 s y Gemini.
+   `Gemini/Groq/DeepSeek`. Solo sesión: al reiniciar vuelven 40 s y Gemini.
 
 ## Estructura
 
@@ -157,7 +157,7 @@ services/narutoService.js   fetch al micro cloud /characters + NarutoApiError
 services/teachersService.js  fetch al micro cloud /teachers + TeachersApiError (GET path/query; CRUD con body JSON)
 services/aiService.js       fetch al micro cloud /chat + AiApiError (provider/timeout; sin memoria)
 services/http.js            createTimeoutSignal + timeoutMessage (timeout compartido)
-context/SettingsContext.js  timeoutMs (20/40/80/160) + aiProvider (gemini/openai/deepseek), solo sesión
+context/SettingsContext.js  timeoutMs (20/40/80/160) + aiProvider (gemini/groq/deepseek), solo sesión
 context/PokemonContext.js   Estado global; next/prev por lista de la nube (getPokemonIds) + timeout/abort
 context/NarutoContext.js    Estado global; next/prev por prevId/nextId del payload + timeout/abort
 context/TeachersContext.js  Estado global; lista auto + vista list|detail + admin CRUD (formMode/submitForm/removeTeacher)
@@ -196,7 +196,7 @@ docs/img/               Evidencias del reporte de funcionamiento.
 | Docentes | `PATCH /teachers/:id` | Parcial por ID numérico (body JSON) |
 | Docentes | `DELETE /teachers/:id` | Borra por ID numérico |
 | Docentes | `GET /health` | `{"ok":true,"db":true,"mode":"dynamodb"}` (`503` sin BD, sin fallback) |
-| Asistente | `POST /chat` | Pregunta al asistente IA (`{"message":"…","provider":"gemini|openai|deepseek","timeoutMs":40000}` → `{"reply":"…","provider":"…","model":"…"}`); solo catálogo, sin memoria |
+| Asistente | `POST /chat` | Pregunta al asistente IA (`{"message":"…","provider":"gemini|groq|deepseek","timeoutMs":40000}` → `{"reply":"…","provider":"…","model":"…"}`); solo catálogo, sin memoria |
 | Asistente | `GET /health` | `{"ok":true,"defaultProvider":"gemini","providers":{…}}` (cada proveedor indica `configured`) |
 
 Respuesta curada Pokémon (ej. `/pokemons/25`):
@@ -245,7 +245,7 @@ Respuesta curada Docentes (ej. `/teachers/2`):
 
 Los cuatro son Web Service de la rama `feature/escalamiento-cloud-dbs` (ver `render.yaml`
 de cada micro): build, start, `rootDir`, health check `/health` y env vars
-(`DATABASE_URL` / llaves AWS + región + tabla / `GEMINI_API_KEY`, `OPENAI_API_KEY`,
+(`DATABASE_URL` / llaves AWS + región + tabla / `GEMINI_API_KEY`, `GROQ_API_KEY`,
 `DEEPSEEK_API_KEY` + modelos) pegadas **en el dashboard**, nunca en git (`.env` ignorados).
 El micro docentes es Node nativo sin Express (`npm start` → `server.js`, con `index.js`
 puente por si la plataforma arranca con `node index.js`).
